@@ -1,0 +1,3327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>LogicLab — Laboratório de Portas Lógicas</title>
+  <style>
+    /* =========================================================================
+       DESIGN SYSTEM — LOGICLAB (MOBILE-FIRST NATIVE APP ARCHITECTURE)
+       Zero dependências externas • Zero overflow horizontal • Touch >= 44px
+       ========================================================================= */
+    :root {
+      --bg: #0b0f19;
+      --surface: #131a29;
+      --surface-2: #192236;
+      --surface-3: #212d45;
+      --border: #23304a;
+      --border-strong: #324466;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --high: #22c55e;
+      --high-glow: rgba(34, 197, 94, 0.55);
+      --cyan: #38bdf8;
+      --cyan-glow: rgba(56, 189, 248, 0.45);
+      --low: #475569;
+      --amber: #f59e0b;
+      --danger: #f43f5e;
+      --radius: 16px;
+      --radius-sm: 12px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --topbar-h: 52px;
+      --bottomnav-h: 64px;
+      --sidebar-w: 236px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.45;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.fs-open {
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100dvh;
+    }
+
+    button, input {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+      transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    }
+    button:active { transform: scale(0.95); }
+
+    .hidden { display: none !important; }
+    .no-select { user-select: none; -webkit-user-select: none; }
+    .mono { font-family: var(--font-mono); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+    /* =========================================================================
+       APP SHELL: TOP APP BAR (MOBILE) + SIDEBAR (DESKTOP) + BOTTOM NAV (MOBILE)
+       ========================================================================= */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      width: 100%;
+      max-width: 100vw;
+    }
+
+    /* Top App Bar (Mobile < 900px) */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--topbar-h);
+      background: rgba(11, 15, 25, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(34, 197, 94, 0.2));
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .mod-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      white-space: nowrap;
+    }
+
+    .top-studio-btn {
+      min-height: 36px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--cyan), var(--high));
+      color: #06131c;
+      font-size: 12px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Desktop Sidebar (escondido no mobile) */
+    .desktop-sidebar {
+      display: none;
+    }
+
+    /* Bottom Navigation Bar (Mobile < 900px) */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 60;
+      height: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px));
+      padding: 4px 6px env(safe-area-inset-bottom, 0px);
+      background: rgba(15, 22, 36, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+    }
+
+    .bottom-tab {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-height: 52px;
+      border-radius: 12px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .bottom-tab svg { width: 22px; height: 22px; }
+    .bottom-tab.active {
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .bottom-tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 26%;
+      right: 26%;
+      height: 2.5px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--high));
+    }
+
+    /* Main Content Area */
+    .app-main {
+      flex: 1;
+      width: 100%;
+      max-width: 100vw;
+      padding: 12px 12px calc(var(--bottomnav-h) + 22px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    /* Desktop Breakpoint (>= 900px) */
+    @media (min-width: 900px) {
+      .top-bar, .bottom-nav { display: none; }
+      .app-shell { flex-direction: row; }
+      .desktop-sidebar {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: var(--sidebar-w);
+        background: #0e1422;
+        border-right: 1px solid var(--border);
+        padding: 18px 14px;
+        gap: 18px;
+        z-index: 40;
+      }
+      .side-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+      }
+      .side-tab {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 46px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-align: left;
+      }
+      .side-tab:hover { background: rgba(255, 255, 255, 0.04); color: #fff; }
+      .side-tab.active {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(34, 197, 94, 0.12));
+        color: var(--cyan);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+      }
+      .app-main {
+        margin-left: var(--sidebar-w);
+        width: calc(100% - var(--sidebar-w));
+        max-width: calc(100vw - var(--sidebar-w));
+        padding: 24px 28px 44px;
+      }
+    }
+
+    /* =========================================================================
+       COMPONENTES BASE (CARDS, SEGMENTED CONTROLS, BOTÕES, TABELAS)
+       ========================================================================= */
+    .stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .stack-lg { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .card-inset {
+      background: #0d1320;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .label-xs {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .section-title {
+      margin: 2px 0 0;
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.25;
+    }
+
+    /* Segmented Control com scroll horizontal suave (nunca quebra feio) */
+    .segmented {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      max-width: 100%;
+    }
+    .segmented::-webkit-scrollbar { display: none; }
+
+    .seg-btn {
+      flex: 1 0 auto;
+      min-height: 44px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .seg-btn.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(34, 197, 94, 0.14));
+      color: #fff;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+    }
+
+    /* Botões */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-2);
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--surface-3); }
+    .btn-sm { min-height: 38px; padding: 6px 11px; font-size: 12px; border-radius: 10px; }
+    .btn-block { width: 100%; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--high));
+      color: #04131c;
+      border: none;
+      font-weight: 800;
+    }
+    .btn-cyan {
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--cyan);
+      border-color: rgba(56, 189, 248, 0.42);
+    }
+    .btn-green {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--high);
+      border-color: rgba(34, 197, 94, 0.45);
+    }
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.14);
+      color: #fda4af;
+      border-color: rgba(244, 63, 94, 0.4);
+    }
+
+    /* Botão destaque "Abrir Ecrã Cheio" */
+    .btn-fullscreen-cta {
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0ea5e9, #22c55e);
+      color: #04121b;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.22);
+    }
+
+    /* Scroll horizontal de chips */
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      max-width: 100%;
+    }
+    .chips-row::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex-shrink: 0;
+      min-height: 38px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chip.active {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.14);
+    }
+
+    /* Grid Responsivo (sempre 1 col no mobile, 2 cols no desktop >= 900px) */
+    .grid-desktop-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+    @media (min-width: 900px) {
+      .grid-desktop-2 { grid-template-columns: 7fr 5fr; align-items: start; }
+      .grid-desktop-eq { grid-template-columns: 1fr 1fr; align-items: start; }
+    }
+
+    /* Grade de Engenharia (Canvas Background) */
+    .eng-grid {
+      background-color: #070b13;
+      background-image: radial-gradient(circle at 1px 1px, rgba(56, 189, 248, 0.18) 1px, transparent 0);
+      background-size: 22px 22px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Efeitos SVG */
+    .glow-high { filter: drop-shadow(0 0 5px var(--high-glow)); }
+    .glow-amber { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8)); }
+    .glow-bulb { filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.9)); }
+
+    @keyframes currentFlow { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+    .current-flow { stroke-dasharray: 6 6; animation: currentFlow 0.7s linear infinite; }
+
+    @keyframes pulseRing {
+      0%, 100% { r: 10; opacity: 1; }
+      50% { r: 14; opacity: 0.45; }
+    }
+    .pin-ring-pulse { animation: pulseRing 1s ease-in-out infinite; }
+
+    /* Input & Teclado Booleano */
+    .expr-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    .expr-input {
+      flex: 1;
+      min-width: 0;
+      min-height: 48px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #070b13;
+      border: 1.5px solid var(--border-strong);
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      outline: none;
+    }
+    .expr-input:focus { border-color: var(--cyan); }
+
+    .bool-kbd {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .kbd-btn {
+      min-height: 46px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 800;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.05;
+    }
+    .kbd-btn small {
+      font-family: var(--font-sans);
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .kbd-btn.var { color: var(--high); border-color: rgba(34, 197, 94, 0.35); background: rgba(34, 197, 94, 0.08); }
+    .kbd-btn.op { color: var(--cyan); border-color: rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.08); }
+    .kbd-btn.danger { color: #fda4af; border-color: rgba(244, 63, 94, 0.35); background: rgba(244, 63, 94, 0.08); font-family: var(--font-sans); font-size: 11px; }
+
+    /* Botões de Entrada Rápida (A, B, C, D) */
+    .in-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .in-btn {
+      min-height: 44px;
+      min-width: 68px;
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border-strong);
+      background: var(--surface-2);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .in-btn.on {
+      border-color: var(--high);
+      background: rgba(34, 197, 94, 0.16);
+      color: var(--high);
+    }
+
+    /* Tabelas-Verdade */
+    .tt-box {
+      overflow-x: auto;
+      max-height: 320px;
+      overflow-y: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0a0f1c;
+    }
+    table.tt {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+    table.tt th {
+      position: sticky;
+      top: 0;
+      background: #121b2e;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 9px 6px;
+      border-bottom: 1px solid var(--border);
+      z-index: 2;
+    }
+    table.tt td {
+      padding: 9px 6px;
+      border-bottom: 1px solid rgba(35, 48, 74, 0.6);
+    }
+    table.tt tr.tt-row { cursor: pointer; }
+    table.tt tr.tt-row.active {
+      background: rgba(56, 189, 248, 0.18);
+      box-shadow: inset 3px 0 0 var(--cyan);
+      font-weight: 800;
+    }
+    .bit-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 24px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .bit-1 { background: rgba(34, 197, 94, 0.2); color: var(--high); border: 1px solid rgba(34, 197, 94, 0.5); }
+    .bit-0 { background: rgba(71, 85, 105, 0.25); color: #94a3b8; border: 1px solid rgba(71, 85, 105, 0.45); }
+
+    /* =========================================================================
+       QUICK-ADD SYMBOL DOCK (INLINE E FULLSCREEN)
+       ========================================================================= */
+    .symbol-dock {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 2px;
+      scrollbar-width: none;
+      max-width: 100%;
+    }
+    .symbol-dock::-webkit-scrollbar { display: none; }
+
+    .sym-btn {
+      flex-shrink: 0;
+      min-width: 60px;
+      height: 58px;
+      padding: 5px 7px;
+      border-radius: 13px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .sym-btn svg { width: 34px; height: 24px; pointer-events: none; }
+    .sym-btn span {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 800;
+      color: #cbd5e1;
+      line-height: 1;
+    }
+    .sym-btn.io-in { border-color: rgba(34, 197, 94, 0.45); background: rgba(34, 197, 94, 0.1); }
+    .sym-btn.io-in span { color: var(--high); }
+    .sym-btn.io-out { border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.1); }
+    .sym-btn.io-out span { color: var(--cyan); }
+
+    /* =========================================================================
+       CANVAS INLINE & FULLSCREEN STUDIO (ECRÃ CHEIO)
+       ========================================================================= */
+    .inline-stage {
+      height: 300px;
+      width: 100%;
+      touch-action: none;
+    }
+    @media (min-width: 900px) {
+      .inline-stage { height: 390px; }
+    }
+
+    /* Fullscreen Studio Overlay */
+    #fs-studio {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      z-index: 1000;
+      background: #070b13;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top HUD do Ecrã Cheio */
+    .fs-top-hud {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px;
+      background: rgba(11, 15, 25, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 20;
+    }
+
+    .fs-icon-btn {
+      min-width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .fs-icon-btn.close-btn {
+      padding: 0 11px;
+      gap: 4px;
+      font-size: 13px;
+      background: rgba(244, 63, 94, 0.14);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+    }
+
+    .fs-expr-pill {
+      flex: 1;
+      min-width: 0;
+      height: 42px;
+      padding: 0 12px;
+      border-radius: 11px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      text-align: left;
+    }
+    .fs-expr-text {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .fs-expr-pill small {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.16);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* Área Full-Bleed do Canvas */
+    .fs-canvas-area {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      touch-action: none;
+      overflow: hidden;
+      background-color: #070b13;
+      background-image: radial-gradient(circle at 1px 1px, rgba(56, 189, 248, 0.18) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+
+    /* Pílula de Dica durante Conexão */
+    .wire-banner {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
+      background: rgba(245, 158, 11, 0.96);
+      color: #090d16;
+      padding: 7px 10px 7px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      max-width: calc(100% - 20px);
+      white-space: nowrap;
+    }
+    .wire-banner button {
+      background: #090d16;
+      color: #fbbf24;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 999px;
+      min-height: 28px;
+    }
+
+    /* Controles de Zoom Flutuantes (+, -, Fit) */
+    .zoom-fab-stack {
+      position: absolute;
+      right: 10px;
+      bottom: 12px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .zoom-fab {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(19, 26, 41, 0.92);
+      border: 1px solid var(--border-strong);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Barra Contextual do Bloco Selecionado */
+    .node-ctx-bar {
+      position: absolute;
+      left: 10px;
+      bottom: 12px;
+      z-index: 22;
+      background: rgba(19, 26, 41, 0.96);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+      max-width: calc(100% - 68px);
+      overflow-x: auto;
+    }
+
+    /* Dock Inferior do Ecrã Cheio */
+    .fs-bottom-dock {
+      flex-shrink: 0;
+      background: rgba(15, 22, 36, 0.97);
+      border-top: 1px solid var(--border);
+      padding: 6px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+      z-index: 25;
+    }
+
+    .dock-cats {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .dock-cat-tabs {
+      display: flex;
+      gap: 4px;
+    }
+    .dock-cat-btn {
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .dock-cat-btn.active {
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--cyan);
+    }
+
+    /* Bottom Sheet Deslizável (Expressão + Toggles + Tabela-Verdade no Fullscreen) */
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1050;
+      background: rgba(4, 7, 14, 0.65);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .bottom-sheet {
+      width: 100%;
+      max-width: 620px;
+      max-height: 82dvh;
+      background: var(--surface);
+      border-top: 1px solid var(--border-strong);
+      border-radius: 22px 22px 0 0;
+      padding: 10px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.65);
+      animation: slideUp 0.22s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0.4; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-handle {
+      width: 42px;
+      height: 5px;
+      border-radius: 999px;
+      background: var(--border-strong);
+      margin: 0 auto 4px;
+    }
+
+    /* =========================================================================
+       CATÁLOGO 8 PORTAS & 16 VARIANTES (MOBILE CARDS)
+       ========================================================================= */
+    .grid-8 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    @media (min-width: 720px) {
+      .grid-8 { grid-template-columns: repeat(8, 1fr); }
+    }
+    .cat-btn {
+      padding: 8px 4px;
+      min-height: 68px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .cat-btn.active {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.14);
+    }
+
+    .v16-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 680px) {
+      .v16-list { grid-template-columns: repeat(2, 1fr); }
+    }
+    .v16-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Error Box & Progress */
+    .error-box {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(244, 63, 94, 0.14);
+      border: 1px solid rgba(244, 63, 94, 0.45);
+      color: #fda4af;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .progress-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #090e1a;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--high));
+      transition: width 0.35s ease;
+    }
+
+    /* Toast */
+    #toast-box {
+      position: fixed;
+      top: 62px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      width: max-content;
+      max-width: calc(100vw - 24px);
+    }
+    .toast {
+      padding: 9px 15px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #131c31;
+      color: #fff;
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .toast.success { border-color: rgba(34, 197, 94, 0.55); color: var(--high); background: #0a2016; }
+    .toast.warn { border-color: rgba(245, 158, 11, 0.55); color: #fcd34d; background: #261907; }
+  </style>
+</head>
+<body>
+  <div id="toast-box" aria-live="polite"></div>
+
+  <div class="app-shell">
+    <!-- =================================================================== -->
+    <!-- TOP APP BAR (MOBILE)                                                -->
+    <!-- =================================================================== -->
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+            <path d="M4 10H11M4 22H11M23 16H28" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M11 7H16.5C21 7 23.5 10.5 23.5 16C23.5 21.5 21 25 16.5 25H11V7Z" stroke="#22c55e" stroke-width="2.6" fill="rgba(34,197,94,0.16)"/>
+          </svg>
+        </div>
+        <span class="brand-name">LogicLab</span>
+        <span id="mobile-mod-badge" class="mod-badge">Aulas</span>
+      </div>
+      <button id="top-open-studio" class="top-studio-btn" title="Abrir Quadro Criativo em Ecrã Cheio">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        Ecrã Cheio
+      </button>
+    </header>
+
+    <!-- =================================================================== -->
+    <!-- SIDEBAR ELEGANTE (DESKTOP >= 900px)                                 -->
+    <!-- =================================================================== -->
+    <aside class="desktop-sidebar" aria-label="Menu Lateral">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+            <path d="M4 10H11M4 22H11M23 16H28" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M11 7H16.5C21 7 23.5 10.5 23.5 16C23.5 21.5 21 25 16.5 25H11V7Z" stroke="#22c55e" stroke-width="2.6" fill="rgba(34,197,94,0.16)"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">LogicLab</div>
+          <div style="font-size:11px; color:var(--text-muted);">Portas Lógicas</div>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <button class="side-tab active" data-tab="mod1">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Aulas
+        </button>
+        <button class="side-tab" data-tab="mod2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Montar na Prática
+        </button>
+        <button class="side-tab" data-tab="mod3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          Sandbox Livre
+        </button>
+        <button class="side-tab" data-tab="mod4">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Desafios
+        </button>
+      </nav>
+
+      <button id="side-open-studio" class="btn-fullscreen-cta" style="min-height:46px; font-size:13px;">
+        ⛶ Abrir Studio Fullscreen
+      </button>
+    </aside>
+
+    <!-- =================================================================== -->
+    <!-- CONTEÚDO PRINCIPAL                                                  -->
+    <!-- =================================================================== -->
+    <main class="app-main">
+      <div class="main-container">
+
+        <!-- =============================================================== -->
+        <!-- ABA 1: AULAS (3 SEÇÕES VIA SEGMENTED CONTROL)                   -->
+        <!-- =============================================================== -->
+        <section id="mod1" class="mod-pane stack-lg">
+          <div class="segmented" role="tablist">
+            <button class="seg-btn active" data-m1="expr">⚡ Expressão ↔ Circuito</button>
+            <button class="seg-btn" data-m1="catalog">🔌 8 Portas</button>
+            <button class="seg-btn" data-m1="variants16">🧩 16 Variantes</button>
+          </div>
+
+          <!-- 1.2 EXPRESSÃO ↔ CIRCUITO (BIDIRECIONAL) -->
+          <div id="m1-expr" class="m1-sub stack">
+            <div class="segmented" style="background:#0e1422;">
+              <button class="seg-btn active" data-bmode="e2c">✍️ Expressão → Circuito</button>
+              <button class="seg-btn" data-bmode="c2e">🎨 Circuito → Expressão</button>
+            </div>
+
+            <!-- MODO A: ESCREVER EXPRESSÃO -> CIRCUITO -->
+            <div id="bmode-e2c" class="stack">
+              <div class="card stack">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <label for="e2c-input" class="label-xs">Expressão Booleana</label>
+                  <span class="mono" style="font-size:11px; color:var(--text-dim);">+, ·, ⊕, ⊙, ', ¬</span>
+                </div>
+
+                <div class="expr-row">
+                  <input id="e2c-input" class="expr-input" type="text" autocomplete="off" spellcheck="false"
+                         value="S = (A+B).(A.C)+(A⊕B)" placeholder="Ex: S = (A+B).(A.C)+(A⊕B)" />
+                  <button id="e2c-go" class="btn btn-primary" style="flex-shrink:0;">Gerar</button>
+                </div>
+
+                <div id="e2c-err" class="error-box hidden"></div>
+
+                <!-- Presets rápidos -->
+                <div class="chips-row" id="e2c-presets">
+                  <button class="chip active" data-expr="S = (A+B).(A.C)+(A⊕B)">S = (A+B).(A.C)+(A⊕B)</button>
+                  <button class="chip" data-expr="S = (A·B)'">S = (A·B)'</button>
+                  <button class="chip" data-expr="S = A⊕B⊕C">S = A⊕B⊕C</button>
+                  <button class="chip" data-expr="S = (A+B)·C'">S = (A+B)·C'</button>
+                </div>
+
+                <!-- Teclado Booleano Rápido -->
+                <div class="bool-kbd" id="e2c-kbd">
+                  <button class="kbd-btn var" data-ins="A">A</button>
+                  <button class="kbd-btn var" data-ins="B">B</button>
+                  <button class="kbd-btn var" data-ins="C">C</button>
+                  <button class="kbd-btn var" data-ins="D">D</button>
+                  <button class="kbd-btn op" data-ins="+">+<small>OR</small></button>
+                  <button class="kbd-btn op" data-ins="·">·<small>AND</small></button>
+                  <button class="kbd-btn op" data-ins="⊕">⊕<small>XOR</small></button>
+                  <button class="kbd-btn op" data-ins="⊙">⊙<small>XNOR</small></button>
+                  <button class="kbd-btn op" data-ins="¬">¬<small>NOT</small></button>
+                  <button class="kbd-btn op" data-ins="'">'<small>NOT</small></button>
+                  <button class="kbd-btn" data-ins="(">(</button>
+                  <button class="kbd-btn" data-ins=")">)</button>
+                  <button class="kbd-btn" data-act="back" style="font-size:13px;">⌫</button>
+                  <button class="kbd-btn danger" data-act="clear">Limpar</button>
+                </div>
+              </div>
+
+              <div class="grid-desktop-2">
+                <!-- Diagrama Gerado -->
+                <div class="card stack">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div style="min-width:0;">
+                      <div class="label-xs" style="color:var(--high);">Circuito Gerado</div>
+                      <div id="e2c-fmt" class="mono" style="font-size:13px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+                    </div>
+                    <div id="e2c-out-pill" class="mono" style="font-size:13px; font-weight:800; padding:6px 12px; border-radius:10px; flex-shrink:0;">S = 0</div>
+                  </div>
+
+                  <!-- Toggles rápidos de A, B, C, D -->
+                  <div id="e2c-toggles" class="in-row"></div>
+
+                  <!-- SVG Automático -->
+                  <div id="e2c-svg-box" class="eng-grid" style="min-height:230px; max-height:360px; overflow:auto; display:flex; align-items:center; justify-content:center; padding:8px;">
+                    <svg id="e2c-svg" class="no-select" style="display:block;"></svg>
+                  </div>
+
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <button id="e2c-view-fs" class="btn btn-cyan">⛶ Ver Ecrã Cheio</button>
+                    <button id="e2c-edit-fs" class="btn btn-primary">🎨 Editar no Studio</button>
+                  </div>
+                </div>
+
+                <!-- Tabela-Verdade -->
+                <div class="card stack">
+                  <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                      <div style="font-weight:800; color:#fff;">Tabela-Verdade</div>
+                      <div style="font-size:11px; color:var(--text-muted);">Toque na linha para testar no circuito</div>
+                    </div>
+                    <span id="e2c-tt-cnt" class="mono" style="font-size:11px; color:var(--cyan);">8 linhas</span>
+                  </div>
+                  <div class="tt-box">
+                    <table class="tt">
+                      <thead id="e2c-tt-head"></thead>
+                      <tbody id="e2c-tt-body"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODO B: DESENHAR CIRCUITO -> EXPRESSÃO -->
+            <div id="bmode-c2e" class="stack hidden">
+              <div class="card" style="border-color:rgba(56,189,248,0.4); background:linear-gradient(135deg,#121b2e,#0e1626);">
+                <div class="label-xs" style="color:var(--high);">Expressão Detectada em Tempo Real</div>
+                <div id="c2e-expr-display" class="mono" style="font-size:17px; font-weight:800; color:#fff; margin-top:4px; word-break:break-word;">S = ...</div>
+                <div id="c2e-expr-sub" class="mono" style="font-size:11px; color:var(--text-muted); margin-top:3px;"></div>
+                <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                  <button id="c2e-copy" class="btn btn-sm btn-cyan">📋 Copiar</button>
+                  <button id="c2e-to-gen" class="btn btn-sm btn-green">Abrir no Gerador →</button>
+                </div>
+              </div>
+
+              <div class="card stack">
+                <button id="c2e-open-fs" class="btn-fullscreen-cta">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                  Abrir Ecrã Cheio para Montar
+                </button>
+
+                <!-- Preview Interativo Inline -->
+                <div id="c2e-inline-stage" class="eng-grid inline-stage">
+                  <svg id="c2e-inline-svg" class="no-select" style="width:100%; height:100%; display:block;"></svg>
+                  <div class="zoom-fab-stack">
+                    <button class="zoom-fab" id="c2e-fit-inline" title="Ajustar">Fit</button>
+                  </div>
+                </div>
+
+                <!-- Dock Rápida Inline -->
+                <div>
+                  <div class="label-xs" style="margin-bottom:4px;">Inserir Símbolo Rápido</div>
+                  <div class="symbol-dock" id="c2e-inline-dock"></div>
+                </div>
+
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <button id="c2e-inline-ex" class="btn btn-sm btn-cyan">Carregar Exemplo</button>
+                  <button id="c2e-inline-org" class="btn btn-sm">Auto-Organizar</button>
+                  <button id="c2e-inline-clear" class="btn btn-sm btn-danger">Limpar</button>
+                </div>
+              </div>
+
+              <!-- Tabela-Verdade do Circuito Desenhado -->
+              <div class="card stack">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div style="font-weight:800; color:#fff;">Tabela-Verdade do Seu Circuito</div>
+                  <span id="c2e-tt-cnt" class="mono" style="font-size:11px; color:var(--high);">—</span>
+                </div>
+                <div class="tt-box">
+                  <table class="tt">
+                    <thead id="c2e-tt-head"></thead>
+                    <tbody id="c2e-tt-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1.1 CATÁLOGO DAS 8 PORTAS -->
+          <div id="m1-catalog" class="m1-sub stack hidden">
+            <div class="grid-8" id="cat-grid"></div>
+
+            <div class="grid-desktop-2">
+              <div class="card stack">
+                <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px;">
+                  <div>
+                    <h2 id="cat-name" class="section-title" style="margin:0;">AND</h2>
+                    <div id="cat-sub" style="font-size:12px; color:var(--text-muted);"></div>
+                  </div>
+                  <div id="cat-in-sel" style="display:flex; align-items:center; gap:4px; background:#0b101d; padding:4px; border-radius:10px; border:1px solid var(--border);">
+                    <span style="font-size:11px; color:var(--text-muted); padding:0 4px;">Ent.:</span>
+                    <button class="btn btn-sm cat-cnt" data-c="2" style="min-width:34px;">2</button>
+                    <button class="btn btn-sm cat-cnt" data-c="3" style="min-width:34px;">3</button>
+                    <button class="btn btn-sm cat-cnt" data-c="4" style="min-width:34px;">4</button>
+                  </div>
+                </div>
+
+                <div class="eng-grid" style="min-height:220px; display:flex; align-items:center; justify-content:center; padding:8px;">
+                  <svg id="cat-svg" viewBox="0 0 520 250" style="width:100%; max-width:520px; height:auto;" class="no-select"></svg>
+                </div>
+
+                <div class="card-inset">
+                  <div class="label-xs" style="color:var(--cyan);">Expressão &amp; Regra Prática</div>
+                  <div id="cat-formula" class="mono" style="font-size:16px; font-weight:800; color:#fff; margin:4px 0;"></div>
+                  <div id="cat-desc" style="font-size:13px; color:var(--text-muted);"></div>
+                </div>
+              </div>
+
+              <div class="card stack">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                  <div style="font-weight:800; color:#fff;">Tabela-Verdade Interativa</div>
+                  <span id="cat-rows" class="mono" style="font-size:11px; color:var(--cyan);">4 linhas</span>
+                </div>
+                <div class="tt-box">
+                  <table class="tt">
+                    <thead id="cat-tt-head"></thead>
+                    <tbody id="cat-tt-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1.3 TODAS AS 16 VARIANTES (2 ENTRADAS) -->
+          <div id="m1-variants16" class="m1-sub stack hidden">
+            <div class="card">
+              <div class="label-xs" style="color:var(--high);">Todas as Funções de 2 Entradas • 2⁴ = 16</div>
+              <h2 class="section-title">As 16 Variantes Booleanas Possíveis</h2>
+              <p style="margin:4px 0 0; font-size:12px; color:var(--text-muted);">
+                De <span class="mono">0000</span> a <span class="mono">1111</span> (para AB = 00, 01, 10, 11). Toque em <strong>Testar no Gerador</strong> para abrir o circuito pronto!
+              </p>
+            </div>
+            <div class="v16-list" id="v16-list"></div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- ABA 2: COMO MONTAR NA PRÁTICA                                   -->
+        <!-- =============================================================== -->
+        <section id="mod2" class="mod-pane stack-lg hidden">
+          <div class="segmented">
+            <button class="seg-btn active" data-m2="sw">💡 Interruptores</button>
+            <button class="seg-btn" data-m2="cmos">🔬 CMOS</button>
+            <button class="seg-btn" data-m2="univ">♾️ Só NAND / NOR</button>
+          </div>
+
+          <!-- Interruptores -->
+          <div id="m2-sw" class="m2-sub card stack">
+            <div>
+              <div class="label-xs" style="color:var(--cyan);">Eletricidade Básica</div>
+              <h2 class="section-title">Portas com Interruptores</h2>
+            </div>
+            <div class="chips-row" id="sw-tabs">
+              <button class="chip active" data-sw="AND">AND (Série)</button>
+              <button class="chip" data-sw="OR">OR (Paralelo)</button>
+              <button class="chip" data-sw="NOT">NOT (NF)</button>
+              <button class="chip" data-sw="XOR">XOR (3 Vias)</button>
+            </div>
+            <div class="grid-desktop-2">
+              <div class="eng-grid" style="min-height:220px; display:flex; align-items:center; justify-content:center; padding:8px;">
+                <svg id="sw-svg" viewBox="0 0 600 280" style="width:100%; max-width:600px; height:auto;" class="no-select"></svg>
+              </div>
+              <div class="stack">
+                <div class="card-inset stack" id="sw-ctrls"></div>
+                <div class="card-inset">
+                  <div class="label-xs" style="color:var(--cyan); margin-bottom:4px;">Explicação</div>
+                  <div id="sw-expl" style="font-size:13px; color:var(--text-muted);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CMOS -->
+          <div id="m2-cmos" class="m2-sub card stack hidden">
+            <div>
+              <div class="label-xs" style="color:var(--cyan);">Microeletrônica Real</div>
+              <h2 class="section-title">Transistores CMOS (PMOS + NMOS)</h2>
+            </div>
+            <div class="chips-row" id="cmos-tabs">
+              <button class="chip active" data-cmos="NOT">NOT (Inversor)</button>
+              <button class="chip" data-cmos="NAND">NAND CMOS</button>
+              <button class="chip" data-cmos="NOR">NOR CMOS</button>
+            </div>
+            <div class="grid-desktop-2">
+              <div class="eng-grid" style="min-height:300px; display:flex; align-items:center; justify-content:center; padding:8px;">
+                <svg id="cmos-svg" viewBox="0 0 580 370" style="width:100%; max-width:580px; height:auto;" class="no-select"></svg>
+              </div>
+              <div class="stack">
+                <div class="card-inset stack" id="cmos-ctrls"></div>
+                <div class="card-inset mono" id="cmos-status" style="font-size:12px;"></div>
+                <div class="card-inset" id="cmos-expl" style="font-size:13px; color:var(--text-muted);"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Portas Universais -->
+          <div id="m2-univ" class="m2-sub card stack hidden">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px;">
+              <div>
+                <div class="label-xs" style="color:var(--high);">Completude Funcional</div>
+                <h2 class="section-title">Portas Universais</h2>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-sm btn-green univ-base" data-base="NAND">Só NAND</button>
+                <button class="btn btn-sm univ-base" data-base="NOR">Só NOR</button>
+              </div>
+            </div>
+            <div class="chips-row" id="univ-targets"></div>
+            <div class="grid-desktop-2">
+              <div class="eng-grid" style="min-height:240px; display:flex; align-items:center; justify-content:center; padding:8px;">
+                <svg id="univ-svg" viewBox="0 0 620 290" style="width:100%; max-width:620px; height:auto;" class="no-select"></svg>
+              </div>
+              <div class="stack">
+                <div class="card-inset stack" id="univ-ctrls"></div>
+                <div class="card-inset">
+                  <div id="univ-alg" class="mono" style="font-size:12px; color:var(--high); margin-bottom:6px;"></div>
+                  <div id="univ-expl" style="font-size:13px; color:var(--text-muted);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- ABA 3: SANDBOX LIVRE                                            -->
+        <!-- =============================================================== -->
+        <section id="mod3" class="mod-pane stack-lg hidden">
+          <div class="card stack">
+            <div>
+              <div class="label-xs" style="color:var(--cyan);">Bancada Criativa Multi-Saída</div>
+              <h2 class="section-title">Sandbox Livre</h2>
+            </div>
+
+            <button id="sb-open-fs" class="btn-fullscreen-cta">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              Abrir Ecrã Cheio para Criar
+            </button>
+
+            <!-- Presets Prontos -->
+            <div class="chips-row" id="sb-presets">
+              <button class="chip active" data-p="halfAdder">Meio-Somador</button>
+              <button class="chip" data-p="xorNand">XOR só com NAND</button>
+              <button class="chip" data-p="parity3">Paridade 3 bits</button>
+              <button class="chip" data-p="implies">Implicação A→B</button>
+            </div>
+
+            <!-- Expressões detectadas -->
+            <div id="sb-exprs-inline" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+
+            <!-- Canvas Inline -->
+            <div id="sb-inline-stage" class="eng-grid inline-stage">
+              <svg id="sb-inline-svg" class="no-select" style="width:100%; height:100%; display:block;"></svg>
+              <div class="zoom-fab-stack">
+                <button class="zoom-fab" id="sb-fit-inline" title="Ajustar">Fit</button>
+              </div>
+            </div>
+
+            <!-- Dock Rápida Inline -->
+            <div>
+              <div class="label-xs" style="margin-bottom:4px;">Inserir Símbolo Rápido</div>
+              <div class="symbol-dock" id="sb-inline-dock"></div>
+            </div>
+
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button id="sb-inline-org" class="btn btn-sm">Auto-Organizar</button>
+              <button id="sb-inline-undo" class="btn btn-sm">↶ Desfazer</button>
+              <button id="sb-inline-clear" class="btn btn-sm btn-danger">Limpar</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- ABA 4: DESAFIOS PRÁTICOS                                        -->
+        <!-- =============================================================== -->
+        <section id="mod4" class="mod-pane stack-lg hidden">
+          <div class="card stack">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <div>
+                <div class="label-xs" style="color:var(--high);">Treino Prático</div>
+                <h2 class="section-title">5 Desafios de Lógica</h2>
+              </div>
+              <span id="q-score" class="mono" style="font-size:13px; font-weight:800; padding:6px 12px; border-radius:10px; background:rgba(34,197,94,0.16); color:var(--high); border:1px solid rgba(34,197,94,0.4);">0 / 5</span>
+            </div>
+            <div class="progress-bar"><div id="q-prog" class="progress-fill" style="width:0%"></div></div>
+            <div class="chips-row" id="q-pills"></div>
+          </div>
+          <div id="q-card" class="card"></div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- BOTTOM NAVIGATION BAR (MOBILE < 900px)                              -->
+    <!-- =================================================================== -->
+    <nav class="bottom-nav" aria-label="Navegação Mobile">
+      <button class="bottom-tab active" data-tab="mod1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Aulas</span>
+      </button>
+      <button class="bottom-tab" data-tab="mod2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>Montar</span>
+      </button>
+      <button class="bottom-tab" data-tab="mod3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Sandbox</span>
+      </button>
+      <button class="bottom-tab" data-tab="mod4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span>Desafios</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODO ECRÃ CHEIO (FULLSCREEN STUDIO) — 100% OTIMIZADO PARA POLEGARES   -->
+  <!-- ===================================================================== -->
+  <div id="fs-studio" class="hidden" role="dialog" aria-modal="true" aria-label="Studio de Portas Lógicas em Ecrã Cheio">
+    <!-- Top HUD Flutuante -->
+    <div class="fs-top-hud">
+      <button id="fs-close" class="fs-icon-btn close-btn" title="Fechar Ecrã Cheio">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="15 18 9 12 15 6"/></svg>
+        Sair
+      </button>
+
+      <!-- Pílula da Expressão (abre o Bottom Sheet) -->
+      <button id="fs-open-sheet" class="fs-expr-pill" title="Ver Expressão e Tabela-Verdade">
+        <span id="fs-expr-text" class="fs-expr-text">S = ...</span>
+        <small>Tabela ▾</small>
+      </button>
+
+      <button id="fs-undo" class="fs-icon-btn" title="Desfazer">↶</button>
+      <button id="fs-auto" class="fs-icon-btn" title="Auto-Organizar">⚡</button>
+      <button id="fs-clear" class="fs-icon-btn" style="color:#fda4af;" title="Limpar">🗑</button>
+    </div>
+
+    <!-- Canvas Interativo Full-Bleed -->
+    <div id="fs-canvas-area" class="fs-canvas-area">
+      <!-- Banner de Conexão -->
+      <div id="fs-wire-banner" class="wire-banner hidden">
+        <span>Toque em uma entrada livre</span>
+        <button id="fs-wire-cancel">Cancelar</button>
+      </div>
+
+      <svg id="fs-svg" class="no-select" style="width:100%; height:100%; display:block;"></svg>
+
+      <!-- Barra Contextual do Bloco Selecionado -->
+      <div id="fs-ctx-bar" class="node-ctx-bar hidden"></div>
+
+      <!-- Zoom Flutuante -->
+      <div class="zoom-fab-stack">
+        <button id="fs-zoom-in" class="zoom-fab" title="Aumentar Zoom">+</button>
+        <button id="fs-zoom-out" class="zoom-fab" title="Reduzir Zoom">−</button>
+        <button id="fs-zoom-fit" class="zoom-fab" style="font-size:12px;" title="Centralizar">Fit</button>
+      </div>
+    </div>
+
+    <!-- Dock Inferior de Botões Rápidos de Símbolos -->
+    <div class="fs-bottom-dock">
+      <div class="dock-cats">
+        <div class="dock-cat-tabs" id="fs-dock-cats">
+          <button class="dock-cat-btn active" data-cat="all">Todos</button>
+          <button class="dock-cat-btn" data-cat="io">I/O</button>
+          <button class="dock-cat-btn" data-cat="basic">Básicas</button>
+          <button class="dock-cat-btn" data-cat="deriv">Derivadas</button>
+        </div>
+        <span class="mono" style="font-size:10px; color:var(--text-dim);">1 toque insere</span>
+      </div>
+      <div class="symbol-dock" id="fs-symbol-dock"></div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- BOTTOM SHEET DESLIZÁVEL (EXPRESSÃO + TOGGLES + TABELA-VERDADE)        -->
+  <!-- ===================================================================== -->
+  <div id="fs-sheet-backdrop" class="sheet-backdrop hidden">
+    <div class="bottom-sheet" id="fs-sheet">
+      <div class="sheet-handle"></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <div>
+          <div class="label-xs" style="color:var(--high);">Análise do Circuito</div>
+          <div style="font-size:16px; font-weight:800; color:#fff;">Expressão &amp; Tabela-Verdade</div>
+        </div>
+        <button id="fs-sheet-close" class="btn btn-sm">Fechar ✕</button>
+      </div>
+
+      <div id="sheet-exprs-list" class="stack" style="gap:6px;"></div>
+
+      <div>
+        <div class="label-xs" style="margin-bottom:6px;">Alternar Entradas ao Vivo</div>
+        <div id="sheet-toggles" class="in-row"></div>
+      </div>
+
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <span class="label-xs">Tabela-Verdade (toque na linha)</span>
+          <span id="sheet-tt-cnt" class="mono" style="font-size:11px; color:var(--cyan);">—</span>
+        </div>
+        <div class="tt-box" style="max-height:240px;">
+          <table class="tt">
+            <thead id="sheet-tt-head"></thead>
+            <tbody id="sheet-tt-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       UTILITÁRIOS GLOBAIS & MOTOR LÓGICO
+       ========================================================================= */
+    const C_HIGH = '#22c55e';
+    const C_CYAN = '#38bdf8';
+    const C_LOW = '#475569';
+    const C_AMBER = '#f59e0b';
+
+    function showToast(msg, type = 'info') {
+      const box = document.getElementById('toast-box');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      box.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-6px)';
+        setTimeout(() => el.remove(), 250);
+      }, 2200);
+    }
+
+    function copyTextSafe(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Expressão copiada!', 'success');
+      } catch {
+        showToast('Não foi possível copiar.', 'warn');
+      }
+      ta.remove();
+    }
+
+    function evalGate(type, inputs) {
+      const arr = inputs.map(v => (v ? 1 : 0));
+      switch (type) {
+        case 'BUFFER': return arr[0] ?? 0;
+        case 'NOT': return arr[0] ? 0 : 1;
+        case 'AND': return arr.every(v => v === 1) ? 1 : 0;
+        case 'OR': return arr.some(v => v === 1) ? 1 : 0;
+        case 'NAND': return arr.every(v => v === 1) ? 0 : 1;
+        case 'NOR': return arr.some(v => v === 1) ? 0 : 1;
+        case 'XOR': return arr.reduce((a, b) => a ^ b, 0);
+        case 'XNOR': return arr.reduce((a, b) => a ^ b, 0) ? 0 : 1;
+        default: return 0;
+      }
+    }
+
+    // Símbolos ANSI/IEEE em SVG (viewBox 0 0 80 60)
+    function gateSymbolSVG(type, isActive = false) {
+      const stroke = isActive ? C_HIGH : '#cbd5e1';
+      const fill = isActive ? 'rgba(34, 197, 94, 0.18)' : 'rgba(19, 26, 41, 0.95)';
+      const bubble = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="5.2" fill="#0b0f19" stroke="${stroke}" stroke-width="2.4"/>`;
+      switch (type) {
+        case 'INPUT':
+          return `<rect x="8" y="12" width="64" height="36" rx="10" fill="rgba(34,197,94,0.16)" stroke="${C_HIGH}" stroke-width="2.6"/><text x="40" y="36" text-anchor="middle" fill="${C_HIGH}" font-family="monospace" font-size="18" font-weight="800">0/1</text>`;
+        case 'OUTPUT':
+          return `<circle cx="40" cy="30" r="19" fill="rgba(56,189,248,0.16)" stroke="${C_CYAN}" stroke-width="2.6"/><text x="40" y="36" text-anchor="middle" fill="${C_CYAN}" font-family="monospace" font-size="18" font-weight="800">S</text>`;
+        case 'BUFFER':
+          return `<path d="M 12 8 L 68 30 L 12 52 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>`;
+        case 'NOT':
+          return `<path d="M 10 8 L 60 30 L 10 52 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>${bubble(67, 30)}`;
+        case 'AND':
+          return `<path d="M 12 8 H 38 A 22 22 0 0 1 38 52 H 12 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>`;
+        case 'NAND':
+          return `<path d="M 8 8 H 34 A 22 22 0 0 1 34 52 H 8 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>${bubble(63, 30)}`;
+        case 'OR':
+          return `<path d="M 10 8 Q 24 30 10 52 H 30 Q 55 52 68 30 Q 55 8 30 8 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>`;
+        case 'NOR':
+          return `<path d="M 7 8 Q 21 30 7 52 H 26 Q 50 52 61 30 Q 50 8 26 8 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>${bubble(67, 30)}`;
+        case 'XOR':
+          return `<path d="M 3 8 Q 17 30 3 52" fill="none" stroke="${stroke}" stroke-width="2.6" stroke-linecap="round"/><path d="M 12 8 Q 26 30 12 52 H 31 Q 56 52 68 30 Q 56 8 31 8 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>`;
+        case 'XNOR':
+          return `<path d="M 2 8 Q 16 30 2 52" fill="none" stroke="${stroke}" stroke-width="2.6" stroke-linecap="round"/><path d="M 10 8 Q 24 30 10 52 H 28 Q 50 52 61 30 Q 50 8 28 8 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.6" stroke-linejoin="round"/>${bubble(67, 30)}`;
+        default: return '';
+      }
+    }
+
+    /* =========================================================================
+       NAVEGAÇÃO PRINCIPAL & SUB-ABAS
+       ========================================================================= */
+    const TAB_LABELS = { mod1: 'Aulas', mod2: 'Montar', mod3: 'Sandbox', mod4: 'Desafios' };
+    let activeMainTab = 'mod1';
+
+    function switchTab(id) {
+      activeMainTab = id;
+      document.querySelectorAll('.bottom-tab, .side-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+      document.querySelectorAll('.mod-pane').forEach(p => p.classList.toggle('hidden', p.id !== id));
+      document.getElementById('mobile-mod-badge').textContent = TAB_LABELS[id] || 'LogicLab';
+      if (id === 'mod3') { sbView.fitToView(); sbView.render(); }
+      if (id === 'mod1') { c2eView.fitToView(); c2eView.render(); }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    document.querySelectorAll('.bottom-tab, .side-tab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+    function switchM1(sub) {
+      document.querySelectorAll('[data-m1]').forEach(b => b.classList.toggle('active', b.dataset.m1 === sub));
+      document.querySelectorAll('.m1-sub').forEach(p => p.classList.toggle('hidden', p.id !== `m1-${sub}`));
+      if (sub === 'expr') { c2eView.fitToView(); c2eView.render(); }
+    }
+    document.querySelectorAll('[data-m1]').forEach(b => b.addEventListener('click', () => switchM1(b.dataset.m1)));
+
+    function switchBMode(mode) {
+      document.querySelectorAll('[data-bmode]').forEach(b => b.classList.toggle('active', b.dataset.bmode === mode));
+      document.getElementById('bmode-e2c').classList.toggle('hidden', mode !== 'e2c');
+      document.getElementById('bmode-c2e').classList.toggle('hidden', mode !== 'c2e');
+      if (mode === 'c2e') { setTimeout(() => { c2eView.fitToView(); c2eView.render(); }, 30); }
+    }
+    document.querySelectorAll('[data-bmode]').forEach(b => b.addEventListener('click', () => switchBMode(b.dataset.bmode)));
+
+    document.querySelectorAll('[data-m2]').forEach(b => b.addEventListener('click', () => {
+      const sub = b.dataset.m2;
+      document.querySelectorAll('[data-m2]').forEach(x => x.classList.toggle('active', x.dataset.m2 === sub));
+      document.querySelectorAll('.m2-sub').forEach(p => p.classList.toggle('hidden', p.id !== `m2-${sub}`));
+    }));
+
+    /* =========================================================================
+       PARSER BOOLEANO (AST) + FORMATADOR + GRAFO
+       ========================================================================= */
+    const KW = new Set(['AND', 'OR', 'NOT', 'XOR', 'XNOR', 'NAND', 'NOR']);
+
+    function tokenizeBool(raw) {
+      let str = raw.trim();
+      let outName = 'S';
+      const eq = str.match(/^([a-zA-Z][a-zA-Z0-9]*)\s*=\s*(.*)$/);
+      if (eq) { outName = eq[1].toUpperCase(); str = eq[2].trim(); }
+      if (!str) throw new Error('Digite uma expressão (ex: S = (A+B).(A.C)+(A⊕B)).');
+
+      const toks = [];
+      let i = 0;
+      while (i < str.length) {
+        const ch = str[i];
+        if (/\s/.test(ch)) { i++; continue; }
+        if (ch === '(') { toks.push({ t: 'LPAREN', v: '(' }); i++; continue; }
+        if (ch === ')') { toks.push({ t: 'RPAREN', v: ')' }); i++; continue; }
+        if (ch === '+' || ch === '|' || ch === '∨') { toks.push({ t: 'OR', v: '+' }); i++; continue; }
+        if (ch === '.' || ch === '·' || ch === '*' || ch === '&' || ch === '∧') { toks.push({ t: 'AND', v: '·' }); i++; continue; }
+        if (ch === '⊕' || ch === '^') { toks.push({ t: 'XOR', v: '⊕' }); i++; continue; }
+        if (ch === '⊙') { toks.push({ t: 'XNOR', v: '⊙' }); i++; continue; }
+        if (ch === '↑') { toks.push({ t: 'NAND', v: '↑' }); i++; continue; }
+        if (ch === '↓') { toks.push({ t: 'NOR', v: '↓' }); i++; continue; }
+        if (ch === '!' || ch === '~' || ch === '¬') { toks.push({ t: 'NOT_PRE', v: '¬' }); i++; continue; }
+        if (ch === "'" || ch === '’') { toks.push({ t: 'NOT_POST', v: "'" }); i++; continue; }
+        if (ch === '0' || ch === '1') { toks.push({ t: 'CONST', v: Number(ch) }); i++; continue; }
+        if (/[a-zA-Z]/.test(ch)) {
+          let w = '';
+          while (i < str.length && /[a-zA-Z]/.test(str[i])) w += str[i++];
+          const up = w.toUpperCase();
+          if (KW.has(up)) toks.push({ t: up === 'NOT' ? 'NOT_PRE' : up, v: up });
+          else for (const c of up) toks.push({ t: 'VAR', v: c });
+          continue;
+        }
+        throw new Error(`Símbolo inválido: "${ch}".`);
+      }
+
+      const exp = [];
+      const ends = t => ['VAR', 'CONST', 'RPAREN', 'NOT_POST'].includes(t);
+      const starts = t => ['VAR', 'CONST', 'LPAREN', 'NOT_PRE'].includes(t);
+      for (let k = 0; k < toks.length; k++) {
+        if (k > 0 && ends(toks[k - 1].t) && starts(toks[k].t)) exp.push({ t: 'AND', v: '·' });
+        exp.push(toks[k]);
+      }
+      return { outName, tokens: exp };
+    }
+
+    function parseBool(raw) {
+      const { outName, tokens } = tokenizeBool(raw);
+      let pos = 0;
+      const peek = () => tokens[pos] || null;
+      const next = () => tokens[pos++];
+
+      const pOr = () => {
+        let l = pXor();
+        while (peek() && (peek().t === 'OR' || peek().t === 'NOR')) { const op = next().t; l = { type: op, left: l, right: pXor() }; }
+        return l;
+      };
+      const pXor = () => {
+        let l = pAnd();
+        while (peek() && (peek().t === 'XOR' || peek().t === 'XNOR')) { const op = next().t; l = { type: op, left: l, right: pAnd() }; }
+        return l;
+      };
+      const pAnd = () => {
+        let l = pUn();
+        while (peek() && (peek().t === 'AND' || peek().t === 'NAND')) { const op = next().t; l = { type: op, left: l, right: pUn() }; }
+        return l;
+      };
+      const pUn = () => {
+        if (peek() && peek().t === 'NOT_PRE') { next(); return { type: 'NOT', child: pUn() }; }
+        return pPost();
+      };
+      const pPost = () => {
+        let n = pPrim();
+        while (peek() && peek().t === 'NOT_POST') { next(); n = { type: 'NOT', child: n }; }
+        return n;
+      };
+      const pPrim = () => {
+        const t = peek();
+        if (!t) throw new Error('Expressão incompleta.');
+        if (t.t === 'VAR') { next(); return { type: 'VAR', name: t.v }; }
+        if (t.t === 'CONST') { next(); return { type: 'CONST', value: t.v }; }
+        if (t.t === 'LPAREN') {
+          next();
+          const inner = pOr();
+          if (!peek() || peek().t !== 'RPAREN') throw new Error('Faltou fechar parêntese ")".');
+          next();
+          return inner;
+        }
+        throw new Error(`Esperava variável ou "(" antes de "${t.v}".`);
+      };
+
+      const ast = pOr();
+      if (pos < tokens.length) throw new Error(`Trecho inesperado "${tokens[pos].v}".`);
+      const vs = new Set();
+      (function walk(n) {
+        if (!n) return;
+        if (n.type === 'VAR') vs.add(n.name);
+        if (n.child) walk(n.child);
+        if (n.left) walk(n.left);
+        if (n.right) walk(n.right);
+      })(ast);
+      const vars = Array.from(vs).sort();
+      if (vars.length > 5) throw new Error('Use no máximo 5 variáveis.');
+      return { outName, ast, vars };
+    }
+
+    function evalAST(n, env) {
+      if (n.type === 'VAR') return env[n.name] ? 1 : 0;
+      if (n.type === 'CONST') return n.value ? 1 : 0;
+      if (n.type === 'NOT') return evalAST(n.child, env) ? 0 : 1;
+      return evalGate(n.type, [evalAST(n.left, env), evalAST(n.right, env)]);
+    }
+
+    const PREC = { OR: 1, NOR: 1, XOR: 2, XNOR: 2, AND: 3, NAND: 3, NOT: 4, VAR: 5, CONST: 5 };
+    const SYM = { OR: ' + ', NOR: ' ↓ ', XOR: ' ⊕ ', XNOR: ' ⊙ ', AND: ' · ', NAND: ' ↑ ' };
+
+    function formatAST(n, pPrec = 0) {
+      if (!n) return '?';
+      if (n.type === 'VAR') return n.name;
+      if (n.type === 'CONST') return String(n.value);
+      if (n.type === 'NOT') {
+        const inner = formatAST(n.child, PREC.NOT);
+        return (n.child.type === 'VAR' || n.child.type === 'CONST') ? `¬${inner}` : `¬(${inner})`;
+      }
+      const pr = PREC[n.type] || 1;
+      const res = `${formatAST(n.left, pr)}${SYM[n.type]}${formatAST(n.right, pr + 0.1)}`;
+      return pr < pPrec ? `(${res})` : res;
+    }
+
+    function astToCircuitData(parsed) {
+      const nodes = [], wires = [];
+      let nid = 1;
+      const inMap = {};
+      parsed.vars.forEach(v => {
+        const nd = { id: 'n' + nid++, type: 'INPUT', label: v, level: 0, value: 0 };
+        inMap[v] = nd;
+        nodes.push(nd);
+      });
+      function build(a) {
+        if (a.type === 'VAR') return inMap[a.name];
+        if (a.type === 'CONST') {
+          const nd = { id: 'n' + nid++, type: 'INPUT', label: String(a.value), fixedConst: a.value, level: 0, value: a.value };
+          nodes.push(nd);
+          return nd;
+        }
+        if (a.type === 'NOT') {
+          const c = build(a.child);
+          const nd = { id: 'n' + nid++, type: 'NOT', label: 'NOT', level: c.level + 1, value: 0 };
+          nodes.push(nd);
+          wires.push({ from: c.id, to: nd.id, toPin: 0 });
+          return nd;
+        }
+        const l = build(a.left), r = build(a.right);
+        const nd = { id: 'n' + nid++, type: a.type, label: a.type, level: Math.max(l.level, r.level) + 1, value: 0 };
+        nodes.push(nd);
+        wires.push({ from: l.id, to: nd.id, toPin: 0 }, { from: r.id, to: nd.id, toPin: 1 });
+        return nd;
+      }
+      const root = build(parsed.ast);
+      const maxL = Math.max(1, ...nodes.map(x => x.level));
+      const out = { id: 'n' + nid++, type: 'OUTPUT', label: parsed.outName || 'S', level: maxL + 1, value: 0 };
+      nodes.push(out);
+      wires.push({ from: root.id, to: out.id, toPin: 0 });
+
+      // Layout em colunas limpo
+      const cols = {};
+      nodes.forEach(n => (cols[n.level] ||= []).push(n));
+      const keys = Object.keys(cols).map(Number).sort((a, b) => a - b);
+      const maxR = Math.max(...keys.map(k => cols[k].length));
+      const rowH = 92, colW = 152, padX = 36, padY = 36;
+      const H = Math.max(250, maxR * rowH + padY * 2);
+      const W = Math.max(460, keys.length * colW + padX * 2 - 30);
+
+      keys.forEach((k, ci) => {
+        const list = cols[k];
+        const startY = (H - (list.length - 1) * rowH) / 2 - 30;
+        list.forEach((nd, ri) => { nd.x = padX + ci * colW; nd.y = startY + ri * rowH; });
+      });
+      return { nodes, wires, nextId: nid + 5, width: W, height: H };
+    }
+
+    /* =========================================================================
+       MODELO DE DADOS DO CIRCUITO + MOTOR INTERATIVO (PAN, PINCH-ZOOM, TOUCH)
+       ========================================================================= */
+    const DIM = {
+      INPUT:  { w: 86, h: 50, ins: 0, outs: 1 },
+      OUTPUT: { w: 86, h: 50, ins: 1, outs: 0 },
+      BUFFER: { w: 96, h: 60, ins: 1, outs: 1 },
+      NOT:    { w: 96, h: 60, ins: 1, outs: 1 },
+      AND:    { w: 96, h: 64, ins: 2, outs: 1 },
+      OR:     { w: 96, h: 64, ins: 2, outs: 1 },
+      NAND:   { w: 96, h: 64, ins: 2, outs: 1 },
+      NOR:    { w: 96, h: 64, ins: 2, outs: 1 },
+      XOR:    { w: 96, h: 64, ins: 2, outs: 1 },
+      XNOR:   { w: 96, h: 64, ins: 2, outs: 1 },
+    };
+
+    const DOCK_ITEMS = [
+      { type: 'INPUT',  label: '+ IN',  cat: 'io',    cls: 'io-in' },
+      { type: 'OUTPUT', label: '+ OUT', cat: 'io',    cls: 'io-out' },
+      { type: 'AND',    label: 'AND',   cat: 'basic', cls: '' },
+      { type: 'OR',     label: 'OR',    cat: 'basic', cls: '' },
+      { type: 'NOT',    label: 'NOT',   cat: 'basic', cls: '' },
+      { type: 'NAND',   label: 'NAND',  cat: 'deriv', cls: '' },
+      { type: 'NOR',    label: 'NOR',   cat: 'deriv', cls: '' },
+      { type: 'XOR',    label: 'XOR',   cat: 'deriv', cls: '' },
+      { type: 'XNOR',   label: 'XNOR',  cat: 'deriv', cls: '' },
+    ];
+
+    function buildSymbolDock(containerEl, onPick, filterCat = 'all') {
+      const list = filterCat === 'all' ? DOCK_ITEMS : DOCK_ITEMS.filter(x => x.cat === filterCat);
+      containerEl.innerHTML = list.map(it => `
+        <button class="sym-btn ${it.cls}" data-type="${it.type}" title="Adicionar ${it.label}">
+          <svg viewBox="0 0 80 60">${gateSymbolSVG(it.type, false)}</svg>
+          <span>${it.label}</span>
+        </button>
+      `).join('');
+      containerEl.querySelectorAll('.sym-btn').forEach(btn => {
+        btn.addEventListener('click', () => onPick(btn.dataset.type));
+      });
+    }
+
+    class CircuitModel {
+      constructor(name) {
+        this.name = name;
+        this.nodes = [];
+        this.wires = [];
+        this.history = [];
+        this.nextId = 1;
+        this.listeners = new Set();
+      }
+      onChange(fn) { this.listeners.add(fn); }
+      notify() { this.evaluate(); this.listeners.forEach(fn => fn()); }
+
+      snapshot() {
+        this.history.push(JSON.stringify({ nodes: this.nodes, wires: this.wires, nextId: this.nextId }));
+        if (this.history.length > 30) this.history.shift();
+      }
+      undo() {
+        if (!this.history.length) return showToast('Nada para desfazer.', 'info');
+        const p = JSON.parse(this.history.pop());
+        this.nodes = p.nodes; this.wires = p.wires; this.nextId = p.nextId;
+        this.notify();
+      }
+      clear() {
+        this.snapshot();
+        this.nodes = []; this.wires = [];
+        this.notify();
+      }
+      loadData(data, saveSnap = true) {
+        if (saveSnap) this.snapshot();
+        this.nodes = data.nodes.map(n => ({ ...n }));
+        this.wires = data.wires.map(w => ({ ...w }));
+        this.nextId = data.nextId || (this.nodes.length + 10);
+        this.notify();
+      }
+      nextInputLabel() {
+        const used = new Set(this.nodes.filter(n => n.type === 'INPUT').map(n => n.label));
+        for (const l of ['A', 'B', 'C', 'D', 'E', 'F']) if (!used.has(l)) return l;
+        return 'X' + (used.size + 1);
+      }
+      nextOutputLabel() {
+        const used = new Set(this.nodes.filter(n => n.type === 'OUTPUT').map(n => n.label));
+        if (!used.has('S')) return 'S';
+        for (let i = 1; i <= 9; i++) if (!used.has('S' + i)) return 'S' + i;
+        return 'S' + (used.size + 1);
+      }
+      addNode(type, x, y, customLabel = null) {
+        this.snapshot();
+        const label = customLabel || (type === 'INPUT' ? this.nextInputLabel() : type === 'OUTPUT' ? this.nextOutputLabel() : type);
+        const nd = { id: 'n' + this.nextId++, type, label, x: Math.round(x), y: Math.round(y), value: 0 };
+        this.nodes.push(nd);
+        this.notify();
+        return nd;
+      }
+      removeNode(id) {
+        this.snapshot();
+        this.nodes = this.nodes.filter(n => n.id !== id);
+        this.wires = this.wires.filter(w => w.from !== id && w.to !== id);
+        this.notify();
+      }
+      disconnectNode(id) {
+        this.snapshot();
+        this.wires = this.wires.filter(w => w.from !== id && w.to !== id);
+        this.notify();
+      }
+      connect(fromId, toId, toPin) {
+        if (fromId === toId) { showToast('Não pode conectar na própria porta.', 'warn'); return false; }
+        this.snapshot();
+        this.wires = this.wires.filter(w => !(w.to === toId && w.toPin === toPin));
+        this.wires.push({ from: fromId, to: toId, toPin });
+        this.notify();
+        return true;
+      }
+      removeWireAt(idx) {
+        this.snapshot();
+        this.wires.splice(idx, 1);
+        this.notify();
+      }
+      autoLayout() {
+        if (!this.nodes.length) return;
+        this.snapshot();
+        const lvl = {};
+        this.nodes.forEach(n => { lvl[n.id] = n.type === 'INPUT' ? 0 : 1; });
+        for (let k = 0; k < 12; k++) {
+          this.wires.forEach(w => {
+            if (lvl[w.from] !== undefined && lvl[w.to] !== undefined) lvl[w.to] = Math.max(lvl[w.to], lvl[w.from] + 1);
+          });
+        }
+        const maxNonOut = Math.max(1, ...this.nodes.filter(n => n.type !== 'OUTPUT').map(n => lvl[n.id]));
+        this.nodes.forEach(n => { if (n.type === 'OUTPUT') lvl[n.id] = maxNonOut + 1; });
+        const cols = {};
+        this.nodes.forEach(n => (cols[lvl[n.id]] ||= []).push(n));
+        const keys = Object.keys(cols).map(Number).sort((a, b) => a - b);
+        const colW = 154, rowH = 92;
+        const maxRows = Math.max(...keys.map(k => cols[k].length));
+        const totalH = Math.max(260, maxRows * rowH);
+        keys.forEach((k, ci) => {
+          const list = cols[k];
+          const sy = (totalH - (list.length - 1) * rowH) / 2;
+          list.forEach((n, ri) => { n.x = 40 + ci * colW; n.y = Math.round(sy + ri * rowH); });
+        });
+        this.notify();
+      }
+      evaluate() {
+        const vals = {};
+        this.nodes.forEach(n => { vals[n.id] = n.type === 'INPUT' ? (n.value ? 1 : 0) : 0; });
+        for (let s = 0; s < 14; s++) {
+          let ch = false;
+          this.nodes.forEach(n => {
+            if (n.type === 'INPUT') return;
+            const d = DIM[n.type];
+            const ins = [];
+            for (let i = 0; i < d.ins; i++) {
+              const w = this.wires.find(x => x.to === n.id && x.toPin === i);
+              ins.push(w ? (vals[w.from] ?? 0) : 0);
+            }
+            const nv = n.type === 'OUTPUT' ? (ins[0] ?? 0) : evalGate(n.type, ins);
+            if (vals[n.id] !== nv) { vals[n.id] = nv; ch = true; }
+          });
+          if (!ch) break;
+        }
+        this.nodes.forEach(n => { n.value = vals[n.id]; });
+      }
+      extractExpression(outId) {
+        const outNode = this.nodes.find(n => n.id === outId);
+        if (!outNode) return null;
+        const w = this.wires.find(x => x.to === outNode.id && x.toPin === 0);
+        if (!w) return { empty: true, label: outNode.label };
+        const used = new Set();
+        let cycle = false, floating = false;
+        const build = (nid, vis) => {
+          if (vis.has(nid)) { cycle = true; return null; }
+          const nd = this.nodes.find(x => x.id === nid);
+          if (!nd) return null;
+          if (nd.type === 'INPUT') { used.add(nd.label); return { type: 'VAR', name: nd.label }; }
+          const nv = new Set(vis); nv.add(nid);
+          const getPin = p => {
+            const cw = this.wires.find(x => x.to === nid && x.toPin === p);
+            if (!cw) { floating = true; return { type: 'CONST', value: 0 }; }
+            return build(cw.from, nv) || { type: 'CONST', value: 0 };
+          };
+          if (nd.type === 'BUFFER') return getPin(0);
+          if (nd.type === 'NOT') return { type: 'NOT', child: getPin(0) };
+          return { type: nd.type, left: getPin(0), right: getPin(1) };
+        };
+        const ast = build(w.from, new Set());
+        if (cycle) return { error: 'Ciclo (loop) detectado no circuito.', label: outNode.label };
+        return {
+          label: outNode.label,
+          ast,
+          expr: `${outNode.label} = ${formatAST(ast)}`,
+          vars: Array.from(used).sort(),
+          floating,
+        };
+      }
+    }
+
+    // Viewport interativo com Pan, Pinch-to-Zoom, Drag Nodes e Tap-to-Connect (44px hit-area)
+    class CircuitViewport {
+      constructor({ stageEl, svgEl, model, wireBannerEl = null, ctxBarEl = null, readOnly = false }) {
+        this.stage = stageEl;
+        this.svg = svgEl;
+        this.model = model;
+        this.wireBanner = wireBannerEl;
+        this.ctxBar = ctxBarEl;
+        this.readOnly = readOnly;
+
+        this.tx = 20; this.ty = 20; this.scale = 1;
+        this.selectedId = null;
+        this.wiringFrom = null;
+        this.pointerWorld = { x: 0, y: 0 };
+        this.addOffset = 0;
+
+        this.pointers = new Map();
+        this.gesture = null; // { mode: 'pan'|'drag'|'pinch', ... }
+
+        this.bindEvents();
+        if (this.model) this.model.onChange(() => this.render());
+      }
+
+      setModel(model, readOnly = false) {
+        this.model = model;
+        this.readOnly = readOnly;
+        this.selectedId = null;
+        this.wiringFrom = null;
+        this.fitToView();
+        this.render();
+      }
+
+      screenToWorld(clientX, clientY) {
+        const r = this.svg.getBoundingClientRect();
+        return {
+          x: (clientX - r.left - this.tx) / this.scale,
+          y: (clientY - r.top - this.ty) / this.scale,
+        };
+      }
+
+      getPinWorld(node, kind, idx = 0) {
+        const d = DIM[node.type];
+        if (kind === 'out') return { x: node.x + d.w, y: node.y + d.h / 2 };
+        if (d.ins === 1) return { x: node.x, y: node.y + d.h / 2 };
+        return { x: node.x, y: node.y + (idx === 0 ? d.h * 0.28 : d.h * 0.72) };
+      }
+
+      addNodeAtCenter(type) {
+        if (!this.model || this.readOnly) return;
+        const r = this.svg.getBoundingClientRect();
+        const cx = (r.width / 2 - this.tx) / this.scale;
+        const cy = (r.height / 2 - this.ty) / this.scale;
+        const d = DIM[type];
+        const off = ((this.addOffset++ % 5) - 2) * 18;
+        const nd = this.model.addNode(type, cx - d.w / 2 + off, cy - d.h / 2 + off);
+        this.selectedId = nd.id;
+        this.render();
+      }
+
+      zoomBy(factor, cx = null, cy = null) {
+        const r = this.svg.getBoundingClientRect();
+        const px = cx !== null ? cx : r.width / 2;
+        const py = cy !== null ? cy : r.height / 2;
+        const nextScale = Math.max(0.35, Math.min(2.2, this.scale * factor));
+        const ratio = nextScale / this.scale;
+        this.tx = px - (px - this.tx) * ratio;
+        this.ty = py - (py - this.ty) * ratio;
+        this.scale = nextScale;
+        this.render();
+      }
+
+      fitToView() {
+        if (!this.model || !this.model.nodes.length) {
+          this.tx = 24; this.ty = 24; this.scale = 1;
+          return;
+        }
+        const r = this.svg.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        this.model.nodes.forEach(n => {
+          const d = DIM[n.type];
+          minX = Math.min(minX, n.x);
+          minY = Math.min(minY, n.y);
+          maxX = Math.max(maxX, n.x + d.w);
+          maxY = Math.max(maxY, n.y + d.h);
+        });
+        const bw = Math.max(120, maxX - minX + 60);
+        const bh = Math.max(120, maxY - minY + 60);
+        const sc = Math.min(1.15, Math.max(0.4, Math.min((r.width - 24) / bw, (r.height - 32) / bh)));
+        this.scale = sc;
+        this.tx = (r.width - (maxX - minX) * sc) / 2 - minX * sc;
+        this.ty = (r.height - (maxY - minY) * sc) / 2 - minY * sc;
+      }
+
+      bindEvents() {
+        this.svg.addEventListener('pointerdown', (e) => {
+          this.svg.setPointerCapture(e.pointerId);
+          this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+          // Se 2 dedos: iniciar Pinch-to-Zoom + Pan
+          if (this.pointers.size === 2) {
+            const pts = Array.from(this.pointers.values());
+            const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            const r = this.svg.getBoundingClientRect();
+            const midX = (pts[0].x + pts[1].x) / 2 - r.left;
+            const midY = (pts[0].y + pts[1].y) / 2 - r.top;
+            this.gesture = { mode: 'pinch', startDist: Math.max(10, dist), startScale: this.scale, startTx: this.tx, startTy: this.ty, midX, midY };
+            return;
+          }
+
+          const target = e.target.closest('[data-hit]');
+          const hit = target ? target.dataset.hit : 'bg';
+
+          if (hit === 'pin-out' && !this.readOnly) {
+            this.wiringFrom = target.dataset.id;
+            this.pointerWorld = this.screenToWorld(e.clientX, e.clientY);
+            this.selectedId = null;
+            this.gesture = { mode: 'wire' };
+            this.render();
+            return;
+          }
+
+          if (hit === 'pin-in' && !this.readOnly) {
+            const toId = target.dataset.id;
+            const toPin = Number(target.dataset.pin);
+            if (this.wiringFrom) {
+              if (this.model.connect(this.wiringFrom, toId, toPin)) {
+                this.wiringFrom = null;
+              }
+            } else {
+              const idx = this.model.wires.findIndex(w => w.to === toId && w.toPin === toPin);
+              if (idx !== -1) {
+                this.model.removeWireAt(idx);
+                showToast('Pino desconectado.', 'info');
+              }
+            }
+            this.render();
+            return;
+          }
+
+          if (hit === 'wire' && !this.readOnly) {
+            this.model.removeWireAt(Number(target.dataset.widx));
+            showToast('Fio removido.', 'info');
+            this.render();
+            return;
+          }
+
+          if (hit === 'node') {
+            const nid = target.dataset.id;
+            const nd = this.model.nodes.find(x => x.id === nid);
+            if (!nd) return;
+            // Se estiver conectando e tocar no corpo de uma porta, conecta na 1ª entrada livre!
+            if (this.wiringFrom && this.wiringFrom !== nid && !this.readOnly) {
+              const d = DIM[nd.type];
+              if (d.ins > 0) {
+                let freePin = 0;
+                for (let p = 0; p < d.ins; p++) {
+                  if (!this.model.wires.some(w => w.to === nid && w.toPin === p)) { freePin = p; break; }
+                }
+                if (this.model.connect(this.wiringFrom, nid, freePin)) this.wiringFrom = null;
+                this.render();
+                return;
+              }
+            }
+            const wpt = this.screenToWorld(e.clientX, e.clientY);
+            this.selectedId = nid;
+            this.gesture = {
+              mode: 'drag',
+              id: nid,
+              ox: wpt.x - nd.x,
+              oy: wpt.y - nd.y,
+              startX: e.clientX,
+              startY: e.clientY,
+              moved: false,
+            };
+            this.render();
+            return;
+          }
+
+          // Fundo: iniciar Pan
+          this.wiringFrom = null;
+          this.selectedId = null;
+          this.gesture = { mode: 'pan', startX: e.clientX, startY: e.clientY, startTx: this.tx, startTy: this.ty };
+          this.render();
+        });
+
+        this.svg.addEventListener('pointermove', (e) => {
+          if (!this.pointers.has(e.pointerId)) return;
+          this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+          if (!this.gesture) return;
+
+          if (this.gesture.mode === 'pinch' && this.pointers.size === 2) {
+            const pts = Array.from(this.pointers.values());
+            const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            const r = this.svg.getBoundingClientRect();
+            const midX = (pts[0].x + pts[1].x) / 2 - r.left;
+            const midY = (pts[0].y + pts[1].y) / 2 - r.top;
+            const nextScale = Math.max(0.35, Math.min(2.2, this.gesture.startScale * (dist / this.gesture.startDist)));
+            const ratio = nextScale / this.gesture.startScale;
+            this.scale = nextScale;
+            this.tx = midX - (this.gesture.midX - this.gesture.startTx) * ratio;
+            this.ty = midY - (this.gesture.midY - this.gesture.startTy) * ratio;
+            this.render();
+            return;
+          }
+
+          if (this.gesture.mode === 'pan') {
+            this.tx = this.gesture.startTx + (e.clientX - this.gesture.startX);
+            this.ty = this.gesture.startTy + (e.clientY - this.gesture.startY);
+            this.render();
+            return;
+          }
+
+          if (this.gesture.mode === 'drag' && !this.readOnly) {
+            const dx = Math.hypot(e.clientX - this.gesture.startX, e.clientY - this.gesture.startY);
+            if (dx > 5) this.gesture.moved = true;
+            if (this.gesture.moved) {
+              const nd = this.model.nodes.find(x => x.id === this.gesture.id);
+              if (nd) {
+                const wpt = this.screenToWorld(e.clientX, e.clientY);
+                nd.x = Math.round(wpt.x - this.gesture.ox);
+                nd.y = Math.round(wpt.y - this.gesture.oy);
+                this.render();
+              }
+            }
+            return;
+          }
+
+          if (this.gesture.mode === 'wire') {
+            this.pointerWorld = this.screenToWorld(e.clientX, e.clientY);
+            this.render();
+          }
+        });
+
+        const endPointer = (e) => {
+          this.pointers.delete(e.pointerId);
+          if (this.gesture && this.gesture.mode === 'drag' && !this.gesture.moved) {
+            // Toque rápido em INPUT alterna 0 <-> 1 instantaneamente!
+            const nd = this.model.nodes.find(x => x.id === this.gesture.id);
+            if (nd && nd.type === 'INPUT' && nd.fixedConst === undefined) {
+              nd.value = nd.value ? 0 : 1;
+              this.model.notify();
+            }
+          }
+          if (this.pointers.size === 0) this.gesture = null;
+        };
+
+        this.svg.addEventListener('pointerup', endPointer);
+        this.svg.addEventListener('pointercancel', endPointer);
+
+        // Roda do mouse para zoom no PC
+        this.svg.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const r = this.svg.getBoundingClientRect();
+          this.zoomBy(e.deltaY < 0 ? 1.12 : 0.89, e.clientX - r.left, e.clientY - r.top);
+        }, { passive: false });
+      }
+
+      render() {
+        if (!this.model) return;
+
+        // Wire Banner
+        if (this.wireBanner) {
+          this.wireBanner.classList.toggle('hidden', !this.wiringFrom);
+        }
+
+        // Barra Contextual do Bloco Selecionado (Fullscreen)
+        if (this.ctxBar) {
+          const sel = this.model.nodes.find(n => n.id === this.selectedId);
+          if (sel && !this.wiringFrom && !this.readOnly) {
+            this.ctxBar.classList.remove('hidden');
+            this.ctxBar.innerHTML = `
+              <span class="mono" style="font-size:12px; font-weight:800; color:var(--cyan); padding:0 6px;">${sel.label}</span>
+              ${sel.type === 'INPUT' ? `<button class="btn btn-sm btn-green" data-ca="tog">${sel.value ? '1 → 0' : '0 → 1'}</button>` : ''}
+              <button class="btn btn-sm" data-ca="unwire">Desconectar</button>
+              <button class="btn btn-sm btn-danger" data-ca="del">Excluir</button>
+            `;
+            this.ctxBar.querySelector('[data-ca="tog"]')?.addEventListener('click', () => {
+              sel.value = sel.value ? 0 : 1; this.model.notify();
+            });
+            this.ctxBar.querySelector('[data-ca="unwire"]')?.addEventListener('click', () => {
+              this.model.disconnectNode(sel.id); showToast('Fios desconectados.', 'info');
+            });
+            this.ctxBar.querySelector('[data-ca="del"]')?.addEventListener('click', () => {
+              this.selectedId = null; this.model.removeNode(sel.id);
+            });
+          } else {
+            this.ctxBar.classList.add('hidden');
+          }
+        }
+
+        // Fios
+        let wiresHtml = '';
+        this.model.wires.forEach((w, idx) => {
+          const src = this.model.nodes.find(n => n.id === w.from);
+          const dst = this.model.nodes.find(n => n.id === w.to);
+          if (!src || !dst) return;
+          const p1 = this.getPinWorld(src, 'out');
+          const p2 = this.getPinWorld(dst, 'in', w.toPin);
+          const dx = Math.max(36, Math.abs(p2.x - p1.x) * 0.48);
+          const d = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+          const hi = src.value === 1;
+          wiresHtml += `
+            <g data-hit="wire" data-widx="${idx}" style="cursor:pointer">
+              <path d="${d}" fill="none" stroke="transparent" stroke-width="24"/>
+              <path d="${d}" fill="none" stroke="${hi ? C_HIGH : C_LOW}" stroke-width="${hi ? 3.5 : 2.6}" stroke-linecap="round" class="${hi ? 'glow-high' : ''}"/>
+            </g>`;
+        });
+
+        // Fio temporário
+        if (this.wiringFrom) {
+          const src = this.model.nodes.find(n => n.id === this.wiringFrom);
+          if (src) {
+            const p1 = this.getPinWorld(src, 'out');
+            const p2 = this.pointerWorld;
+            const dx = Math.max(24, Math.abs(p2.x - p1.x) * 0.4);
+            wiresHtml += `<path d="M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}" fill="none" stroke="${C_AMBER}" stroke-width="2.8" stroke-dasharray="6 4" pointer-events="none"/>`;
+          }
+        }
+
+        // Blocos
+        let nodesHtml = '';
+        this.model.nodes.forEach(n => {
+          const d = DIM[n.type];
+          const hi = n.value === 1;
+          const isSel = n.id === this.selectedId;
+          const stroke = isSel ? C_AMBER : (hi ? C_HIGH : '#334155');
+          let body = '';
+
+          if (n.type === 'INPUT') {
+            body = `
+              <rect width="${d.w}" height="${d.h}" rx="12" fill="${hi ? 'rgba(34,197,94,0.22)' : '#131a29'}" stroke="${stroke}" stroke-width="${isSel ? 2.6 : 2}"/>
+              <text x="16" y="30" fill="#e2e8f0" font-family="monospace" font-size="14" font-weight="800">${n.label}</text>
+              <rect x="42" y="9" width="34" height="32" rx="8" fill="${hi ? C_HIGH : '#1e293b'}"/>
+              <text x="59" y="30" text-anchor="middle" fill="${hi ? '#04131c' : '#cbd5e1'}" font-family="monospace" font-size="15" font-weight="800">${n.value}</text>`;
+          } else if (n.type === 'OUTPUT') {
+            body = `
+              <rect width="${d.w}" height="${d.h}" rx="12" fill="${hi ? 'rgba(34,197,94,0.2)' : '#131a29'}" stroke="${stroke}" stroke-width="${isSel ? 2.6 : 2}"/>
+              <circle cx="26" cy="25" r="13" fill="${hi ? C_HIGH : '#1e293b'}" stroke="${hi ? '#bbf7d0' : '#475569'}" stroke-width="2" class="${hi ? 'glow-high' : ''}"/>
+              <text x="26" y="29" text-anchor="middle" fill="${hi ? '#04131c' : '#94a3b8'}" font-family="monospace" font-size="13" font-weight="800">${n.value}</text>
+              <text x="58" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="14" font-weight="800">${n.label}</text>`;
+          } else {
+            body = `
+              <rect width="${d.w}" height="${d.h}" rx="12" fill="#131a29" stroke="${stroke}" stroke-width="${isSel ? 2.6 : 1.8}"/>
+              <g transform="translate(10, 4) scale(0.92)">${gateSymbolSVG(n.type, hi)}</g>
+              <text x="${d.w / 2}" y="${d.h - 4}" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="9" font-weight="800">${n.type}</text>`;
+          }
+
+          // Pinos com hit-area generosa de 44px (r=22)
+          let pins = '';
+          for (let i = 0; i < d.ins; i++) {
+            const py = d.ins === 1 ? d.h / 2 : (i === 0 ? d.h * 0.28 : d.h * 0.72);
+            const cw = this.model.wires.find(x => x.to === n.id && x.toPin === i);
+            const pAct = cw && (this.model.nodes.find(x => x.id === cw.from)?.value === 1);
+            const targetHint = this.wiringFrom && this.wiringFrom !== n.id;
+            pins += `
+              <g data-hit="pin-in" data-id="${n.id}" data-pin="${i}" style="cursor:crosshair">
+                <circle cx="0" cy="${py}" r="22" fill="transparent"/>
+                ${targetHint ? `<circle cx="0" cy="${py}" r="12" fill="none" stroke="${C_CYAN}" stroke-width="2" class="pin-ring-pulse"/>` : ''}
+                <circle cx="0" cy="${py}" r="8.5" fill="${pAct ? C_HIGH : '#0b0f19'}" stroke="${targetHint ? C_CYAN : (pAct ? '#bbf7d0' : '#64748b')}" stroke-width="2.4"/>
+              </g>`;
+          }
+          if (d.outs === 1) {
+            const isSrc = this.wiringFrom === n.id;
+            pins += `
+              <g data-hit="pin-out" data-id="${n.id}" style="cursor:crosshair">
+                <circle cx="${d.w}" cy="${d.h / 2}" r="22" fill="transparent"/>
+                ${isSrc ? `<circle cx="${d.w}" cy="${d.h / 2}" r="12" fill="none" stroke="${C_AMBER}" stroke-width="2.4" class="pin-ring-pulse"/>` : ''}
+                <circle cx="${d.w}" cy="${d.h / 2}" r="8.5" fill="${isSrc ? C_AMBER : (hi ? C_HIGH : '#0b0f19')}" stroke="${isSrc ? '#fef08a' : (hi ? '#bbf7d0' : '#94a3b8')}" stroke-width="2.4"/>
+              </g>`;
+          }
+
+          nodesHtml += `
+            <g data-hit="node" data-id="${n.id}" transform="translate(${n.x}, ${n.y})" style="cursor:grab">
+              ${body}${pins}
+            </g>`;
+        });
+
+        this.svg.innerHTML = `<g transform="translate(${this.tx}, ${this.ty}) scale(${this.scale})">${wiresHtml}${nodesHtml}</g>`;
+      }
+    }
+
+    /* =========================================================================
+       INSTÂNCIAS DOS MODELOS + FULLSCREEN STUDIO & BOTTOM SHEET
+       ========================================================================= */
+    const c2eModel = new CircuitModel('c2e');
+    const sbModel = new CircuitModel('sandbox');
+    let c2eView, sbView, fsView;
+    let activeFsModel = null;
+
+    function openFullscreenStudio(model, readOnly = false) {
+      activeFsModel = model;
+      document.getElementById('fs-studio').classList.remove('hidden');
+      document.body.classList.add('fs-open');
+      document.querySelector('.fs-bottom-dock').classList.toggle('hidden', readOnly);
+      document.getElementById('fs-undo').classList.toggle('hidden', readOnly);
+      document.getElementById('fs-auto').classList.toggle('hidden', readOnly);
+      document.getElementById('fs-clear').classList.toggle('hidden', readOnly);
+
+      fsView.setModel(model, readOnly);
+      updateFsHud();
+      setTimeout(() => { fsView.fitToView(); fsView.render(); }, 40);
+    }
+
+    function closeFullscreenStudio() {
+      document.getElementById('fs-studio').classList.add('hidden');
+      document.getElementById('fs-sheet-backdrop').classList.add('hidden');
+      document.body.classList.remove('fs-open');
+      activeFsModel = null;
+      c2eView.render();
+      sbView.render();
+    }
+
+    function updateFsHud() {
+      if (!activeFsModel) return;
+      const outs = activeFsModel.nodes.filter(n => n.type === 'OUTPUT');
+      const pillTxt = document.getElementById('fs-expr-text');
+      if (!outs.length) {
+        pillTxt.textContent = 'Adicione + OUT para ver a expressão';
+      } else {
+        const res = activeFsModel.extractExpression(outs[0].id);
+        pillTxt.textContent = res.empty ? `${res.label} = (conecte uma porta)` : res.error ? `⚠️ ${res.error}` : res.expr;
+      }
+      if (!document.getElementById('fs-sheet-backdrop').classList.contains('hidden')) {
+        renderBottomSheet();
+      }
+    }
+
+    function renderBottomSheet() {
+      if (!activeFsModel) return;
+      const outs = activeFsModel.nodes.filter(n => n.type === 'OUTPUT');
+      const exprList = document.getElementById('sheet-exprs-list');
+      if (!outs.length) {
+        exprList.innerHTML = `<div class="card-inset" style="color:var(--text-muted);">Nenhuma saída (+ OUT) adicionada ainda.</div>`;
+      } else {
+        exprList.innerHTML = outs.map(o => {
+          const r = activeFsModel.extractExpression(o.id);
+          const txt = r.empty ? `${o.label} = (desconectado)` : r.error ? `⚠️ ${r.error}` : r.expr;
+          return `
+            <div class="card-inset" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <span class="mono" style="font-size:13px; font-weight:800; color:${o.value ? C_HIGH : '#fff'}; word-break:break-word;">${txt}</span>
+              ${!r.empty && !r.error ? `<button class="btn btn-sm btn-cyan sheet-copy" data-t="${txt}">Copiar</button>` : ''}
+            </div>`;
+        }).join('');
+        exprList.querySelectorAll('.sheet-copy').forEach(b => b.addEventListener('click', () => copyTextSafe(b.dataset.t)));
+      }
+
+      // Toggles de entradas
+      const ins = activeFsModel.nodes.filter(n => n.type === 'INPUT' && n.fixedConst === undefined);
+      const uniqueVars = Array.from(new Set(ins.map(n => n.label))).sort();
+      const togBox = document.getElementById('sheet-toggles');
+      if (!uniqueVars.length) {
+        togBox.innerHTML = `<span style="font-size:12px; color:var(--text-dim);">Sem entradas no quadro.</span>`;
+      } else {
+        togBox.innerHTML = uniqueVars.map(v => {
+          const val = ins.find(n => n.label === v)?.value ? 1 : 0;
+          return `<button class="in-btn ${val ? 'on' : ''}" data-v="${v}"><span>${v}</span><span>${val}</span></button>`;
+        }).join('');
+        togBox.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+          const v = b.dataset.v;
+          const nv = ins.find(n => n.label === v)?.value ? 0 : 1;
+          ins.filter(n => n.label === v).forEach(n => { n.value = nv; });
+          activeFsModel.notify();
+        }));
+      }
+
+      // Tabela-Verdade da primeira saída válida
+      const head = document.getElementById('sheet-tt-head');
+      const body = document.getElementById('sheet-tt-body');
+      const cnt = document.getElementById('sheet-tt-cnt');
+      const firstValid = outs.map(o => activeFsModel.extractExpression(o.id)).find(r => r && !r.empty && !r.error);
+      if (!firstValid) {
+        head.innerHTML = '';
+        body.innerHTML = `<tr><td style="padding:16px; color:var(--text-dim);">Conecte um circuito à saída S para ver a tabela-verdade.</td></tr>`;
+        cnt.textContent = '—';
+        return;
+      }
+      const vars = firstValid.vars.slice(0, 4);
+      const rows = 1 << vars.length;
+      cnt.textContent = `${rows} linhas`;
+      head.innerHTML = `<tr>${vars.map(v => `<th>${v}</th>`).join('')}<th style="color:var(--cyan); border-left:1px solid var(--border);">${firstValid.label}</th></tr>`;
+      const currEnv = {};
+      ins.forEach(n => { currEnv[n.label] = n.value; });
+
+      let h = '';
+      for (let i = 0; i < rows; i++) {
+        const env = {}, bits = [];
+        vars.forEach((v, idx) => { const b = (i >> (vars.length - 1 - idx)) & 1; env[v] = b; bits.push(b); });
+        const out = evalAST(firstValid.ast, env);
+        const act = vars.every((v, idx) => (currEnv[v] ? 1 : 0) === bits[idx]);
+        h += `<tr class="tt-row ${act ? 'active' : ''}" data-b="${bits.join(',')}">${bits.map(b => `<td style="color:${b ? C_HIGH : '#64748b'}">${b}</td>`).join('')}<td style="border-left:1px solid var(--border);"><span class="bit-badge ${out ? 'bit-1' : 'bit-0'}">${out}</span></td></tr>`;
+      }
+      body.innerHTML = h;
+      body.querySelectorAll('.tt-row').forEach(tr => tr.addEventListener('click', () => {
+        const bits = tr.dataset.b.split(',').map(Number);
+        vars.forEach((v, idx) => ins.filter(n => n.label === v).forEach(n => { n.value = bits[idx]; }));
+        activeFsModel.notify();
+      }));
+    }
+
+    function initFullscreenStudio() {
+      fsView = new CircuitViewport({
+        stageEl: document.getElementById('fs-canvas-area'),
+        svgEl: document.getElementById('fs-svg'),
+        model: null,
+        wireBannerEl: document.getElementById('fs-wire-banner'),
+        ctxBarEl: document.getElementById('fs-ctx-bar'),
+      });
+
+      const dockEl = document.getElementById('fs-symbol-dock');
+      buildSymbolDock(dockEl, (type) => fsView.addNodeAtCenter(type), 'all');
+
+      document.querySelectorAll('#fs-dock-cats button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#fs-dock-cats button').forEach(x => x.classList.remove('active'));
+          btn.classList.add('active');
+          buildSymbolDock(dockEl, (type) => fsView.addNodeAtCenter(type), btn.dataset.cat);
+        });
+      });
+
+      document.getElementById('fs-close').addEventListener('click', closeFullscreenStudio);
+      document.getElementById('fs-undo').addEventListener('click', () => activeFsModel?.undo());
+      document.getElementById('fs-auto').addEventListener('click', () => { activeFsModel?.autoLayout(); fsView.fitToView(); fsView.render(); });
+      document.getElementById('fs-clear').addEventListener('click', () => { activeFsModel?.clear(); showToast('Quadro limpo.', 'info'); });
+      document.getElementById('fs-wire-cancel').addEventListener('click', () => { fsView.wiringFrom = null; fsView.render(); });
+      document.getElementById('fs-zoom-in').addEventListener('click', () => fsView.zoomBy(1.2));
+      document.getElementById('fs-zoom-out').addEventListener('click', () => fsView.zoomBy(0.82));
+      document.getElementById('fs-zoom-fit').addEventListener('click', () => { fsView.fitToView(); fsView.render(); });
+
+      // Bottom Sheet
+      const backdrop = document.getElementById('fs-sheet-backdrop');
+      document.getElementById('fs-open-sheet').addEventListener('click', () => {
+        backdrop.classList.remove('hidden');
+        renderBottomSheet();
+      });
+      document.getElementById('fs-sheet-close').addEventListener('click', () => backdrop.classList.add('hidden'));
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.classList.add('hidden'); });
+
+      // Botões globais da TopBar e Sidebar para abrir o Studio direto
+      const openQuickStudio = () => openFullscreenStudio(activeMainTab === 'mod3' ? sbModel : c2eModel, false);
+      document.getElementById('top-open-studio').addEventListener('click', openQuickStudio);
+      document.getElementById('side-open-studio').addEventListener('click', openQuickStudio);
+
+      // Re-renderizar HUD fullscreen quando qualquer modelo mudar
+      c2eModel.onChange(() => { if (activeFsModel === c2eModel) { fsView.render(); updateFsHud(); } });
+      sbModel.onChange(() => { if (activeFsModel === sbModel) { fsView.render(); updateFsHud(); } });
+    }
+
+    /* =========================================================================
+       ABA 1.2A: EXPRESSÃO -> CIRCUITO
+       ========================================================================= */
+    const e2c = { parsed: null, data: null, env: { A: 0, B: 0, C: 0, D: 0, E: 0 } };
+
+    function initE2C() {
+      const inp = document.getElementById('e2c-input');
+      document.getElementById('e2c-go').addEventListener('click', () => runE2C());
+      inp.addEventListener('input', () => runE2C(true));
+
+      document.querySelectorAll('#e2c-presets .chip').forEach(ch => ch.addEventListener('click', () => {
+        document.querySelectorAll('#e2c-presets .chip').forEach(x => x.classList.remove('active'));
+        ch.classList.add('active');
+        inp.value = ch.dataset.expr;
+        runE2C();
+      }));
+
+      document.querySelectorAll('#e2c-kbd button').forEach(btn => btn.addEventListener('click', () => {
+        const s = inp.selectionStart ?? inp.value.length, e = inp.selectionEnd ?? inp.value.length;
+        if (btn.dataset.act === 'clear') inp.value = 'S = ';
+        else if (btn.dataset.act === 'back') {
+          if (s > 0) { inp.value = inp.value.slice(0, s - 1) + inp.value.slice(e); inp.setSelectionRange(s - 1, s - 1); }
+        } else if (btn.dataset.ins) {
+          inp.value = inp.value.slice(0, s) + btn.dataset.ins + inp.value.slice(e);
+          inp.setSelectionRange(s + btn.dataset.ins.length, s + btn.dataset.ins.length);
+        }
+        inp.focus();
+        runE2C(true);
+      }));
+
+      // Ver em Ecrã Cheio (somente leitura/interação com entradas)
+      document.getElementById('e2c-view-fs').addEventListener('click', () => {
+        if (!e2c.data) return;
+        const viewModel = new CircuitModel('e2c-preview');
+        viewModel.loadData(e2c.data, false);
+        viewModel.nodes.filter(n => n.type === 'INPUT').forEach(n => { if (n.fixedConst === undefined) n.value = e2c.env[n.label] ? 1 : 0; });
+        viewModel.evaluate();
+        viewModel.onChange(() => { if (activeFsModel === viewModel) { fsView.render(); updateFsHud(); } });
+        openFullscreenStudio(viewModel, true);
+      });
+
+      // Editar no Quadro Criativo (Ecrã Cheio)
+      document.getElementById('e2c-edit-fs').addEventListener('click', () => {
+        if (!e2c.data) return;
+        c2eModel.loadData(e2c.data, true);
+        openFullscreenStudio(c2eModel, false);
+        showToast('Circuito pronto para edição em Ecrã Cheio!', 'success');
+      });
+
+      runE2C();
+    }
+
+    function runE2C(silent = false) {
+      const err = document.getElementById('e2c-err');
+      try {
+        const parsed = parseBool(document.getElementById('e2c-input').value);
+        err.classList.add('hidden');
+        e2c.parsed = parsed;
+        e2c.data = astToCircuitData(parsed);
+        renderE2C();
+      } catch (ex) {
+        err.textContent = '⚠️ ' + ex.message;
+        err.classList.remove('hidden');
+        if (!silent) showToast('Verifique a sintaxe da expressão.', 'warn');
+      }
+    }
+
+    function renderE2C() {
+      const { parsed, data, env } = e2c;
+      if (!parsed || !data) return;
+
+      data.nodes.forEach(n => { if (n.type === 'INPUT') n.value = n.fixedConst !== undefined ? n.fixedConst : (env[n.label] ? 1 : 0); });
+      for (let s = 0; s < 12; s++) {
+        data.nodes.forEach(n => {
+          if (n.type === 'INPUT') return;
+          const ins = data.wires.filter(w => w.to === n.id).sort((a, b) => a.toPin - b.toPin).map(w => data.nodes.find(x => x.id === w.from)?.value ?? 0);
+          n.value = n.type === 'OUTPUT' ? (ins[0] ?? 0) : evalGate(n.type, ins);
+        });
+      }
+
+      const finalOut = evalAST(parsed.ast, env);
+      document.getElementById('e2c-fmt').textContent = `${parsed.outName} = ${formatAST(parsed.ast)}`;
+      const pill = document.getElementById('e2c-out-pill');
+      pill.textContent = `${parsed.outName} = ${finalOut}`;
+      pill.style.background = finalOut ? 'rgba(34,197,94,0.2)' : 'rgba(71,85,105,0.3)';
+      pill.style.color = finalOut ? C_HIGH : '#cbd5e1';
+      pill.style.border = `1px solid ${finalOut ? 'rgba(34,197,94,0.5)' : 'rgba(71,85,105,0.5)'}`;
+
+      const tog = document.getElementById('e2c-toggles');
+      tog.innerHTML = parsed.vars.map(v => `<button class="in-btn ${env[v] ? 'on' : ''}" data-v="${v}"><span>${v}</span><span>${env[v] ? 1 : 0}</span></button>`).join('');
+      tog.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { env[b.dataset.v] ^= 1; renderE2C(); }));
+
+      // SVG Automático
+      const svg = document.getElementById('e2c-svg');
+      svg.setAttribute('viewBox', `0 0 ${data.width} ${data.height}`);
+      svg.style.width = '100%';
+      svg.style.height = 'auto';
+      svg.style.minWidth = `${Math.min(data.width, 440)}px`;
+
+      const pinP = (n, k, i = 0) => {
+        const d = DIM[n.type];
+        if (k === 'out') return { x: n.x + d.w, y: n.y + d.h / 2 };
+        if (d.ins === 1) return { x: n.x, y: n.y + d.h / 2 };
+        return { x: n.x, y: n.y + (i === 0 ? d.h * 0.28 : d.h * 0.72) };
+      };
+
+      let wH = '';
+      data.wires.forEach(w => {
+        const s = data.nodes.find(x => x.id === w.from), t = data.nodes.find(x => x.id === w.to);
+        if (!s || !t) return;
+        const p1 = pinP(s, 'out'), p2 = pinP(t, 'in', w.toPin), dx = Math.max(30, Math.abs(p2.x - p1.x) * 0.48);
+        const hi = s.value === 1;
+        wH += `<path d="M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}" fill="none" stroke="${hi ? C_HIGH : C_LOW}" stroke-width="${hi ? 3.2 : 2.2}" class="${hi ? 'glow-high' : ''}"/>`;
+      });
+
+      let nH = '';
+      data.nodes.forEach(n => {
+        const d = DIM[n.type], hi = n.value === 1;
+        if (n.type === 'INPUT') {
+          nH += `<g class="e2c-hit" data-v="${n.label}" style="cursor:pointer" transform="translate(${n.x},${n.y})">
+            <rect width="${d.w}" height="${d.h}" rx="12" fill="${hi ? 'rgba(34,197,94,0.22)' : '#131a29'}" stroke="${hi ? C_HIGH : '#334155'}" stroke-width="2"/>
+            <text x="16" y="30" fill="#e2e8f0" font-family="monospace" font-size="14" font-weight="800">${n.label}</text>
+            <rect x="42" y="9" width="34" height="32" rx="8" fill="${hi ? C_HIGH : '#1e293b'}"/>
+            <text x="59" y="30" text-anchor="middle" fill="${hi ? '#04131c' : '#cbd5e1'}" font-family="monospace" font-size="15" font-weight="800">${n.value}</text>
+          </g>`;
+        } else if (n.type === 'OUTPUT') {
+          nH += `<g transform="translate(${n.x},${n.y})">
+            <rect width="${d.w}" height="${d.h}" rx="12" fill="${hi ? 'rgba(34,197,94,0.2)' : '#131a29'}" stroke="${hi ? C_HIGH : '#334155'}" stroke-width="2"/>
+            <circle cx="26" cy="25" r="13" fill="${hi ? C_HIGH : '#1e293b'}" class="${hi ? 'glow-high' : ''}"/>
+            <text x="26" y="29" text-anchor="middle" fill="${hi ? '#04131c' : '#94a3b8'}" font-family="monospace" font-size="13" font-weight="800">${n.value}</text>
+            <text x="58" y="30" text-anchor="middle" fill="#fff" font-family="monospace" font-size="14" font-weight="800">${n.label}</text>
+          </g>`;
+        } else {
+          nH += `<g transform="translate(${n.x},${n.y})">
+            <g transform="translate(8,2) scale(0.92)">${gateSymbolSVG(n.type, hi)}</g>
+            <text x="${d.w / 2}" y="${d.h + 10}" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="10" font-weight="800">${n.type}</text>
+            <circle cx="${d.w}" cy="${d.h / 2}" r="9.5" fill="#0b0f19" stroke="${hi ? C_HIGH : '#475569'}" stroke-width="1.8"/>
+            <text x="${d.w}" y="${d.h / 2 + 3.5}" text-anchor="middle" fill="${hi ? C_HIGH : '#94a3b8'}" font-family="monospace" font-size="10" font-weight="800">${n.value}</text>
+          </g>`;
+        }
+      });
+      svg.innerHTML = wH + nH;
+      svg.querySelectorAll('.e2c-hit').forEach(el => el.addEventListener('click', () => {
+        if (el.dataset.v === '0' || el.dataset.v === '1') return;
+        env[el.dataset.v] ^= 1; renderE2C();
+      }));
+
+      // Tabela-Verdade
+      const vars = parsed.vars, rows = 1 << vars.length;
+      document.getElementById('e2c-tt-cnt').textContent = `${rows} linhas`;
+      document.getElementById('e2c-tt-head').innerHTML = `<tr>${vars.map(v => `<th>${v}</th>`).join('')}<th style="color:var(--cyan); border-left:1px solid var(--border);">${parsed.outName}</th></tr>`;
+      let th = '';
+      for (let i = 0; i < rows; i++) {
+        const re = {}, bs = [];
+        vars.forEach((v, idx) => { const b = (i >> (vars.length - 1 - idx)) & 1; re[v] = b; bs.push(b); });
+        const o = evalAST(parsed.ast, re);
+        const act = vars.every((v, idx) => (env[v] ? 1 : 0) === bs[idx]);
+        th += `<tr class="tt-row ${act ? 'active' : ''}" data-b="${bs.join(',')}">${bs.map(b => `<td style="color:${b ? C_HIGH : '#64748b'}">${b}</td>`).join('')}<td style="border-left:1px solid var(--border);"><span class="bit-badge ${o ? 'bit-1' : 'bit-0'}">${o}</span></td></tr>`;
+      }
+      const tb = document.getElementById('e2c-tt-body');
+      tb.innerHTML = th;
+      tb.querySelectorAll('.tt-row').forEach(tr => tr.addEventListener('click', () => {
+        tr.dataset.b.split(',').map(Number).forEach((b, i) => { env[vars[i]] = b; });
+        renderE2C();
+      }));
+    }
+
+    /* =========================================================================
+       ABA 1.2B: CIRCUITO -> EXPRESSÃO (INLINE + FULLSCREEN)
+       ========================================================================= */
+    function initC2E() {
+      c2eView = new CircuitViewport({
+        stageEl: document.getElementById('c2e-inline-stage'),
+        svgEl: document.getElementById('c2e-inline-svg'),
+        model: c2eModel,
+      });
+
+      buildSymbolDock(document.getElementById('c2e-inline-dock'), (t) => c2eView.addNodeAtCenter(t));
+
+      document.getElementById('c2e-open-fs').addEventListener('click', () => openFullscreenStudio(c2eModel, false));
+      document.getElementById('c2e-fit-inline').addEventListener('click', () => { c2eView.fitToView(); c2eView.render(); });
+      document.getElementById('c2e-inline-org').addEventListener('click', () => { c2eModel.autoLayout(); c2eView.fitToView(); c2eView.render(); });
+      document.getElementById('c2e-inline-clear').addEventListener('click', () => c2eModel.clear());
+      document.getElementById('c2e-inline-ex').addEventListener('click', () => {
+        c2eModel.loadData(astToCircuitData(parseBool('S = (A+B).(A.C)+(A⊕B)')));
+        c2eView.fitToView(); c2eView.render();
+      });
+
+      document.getElementById('c2e-copy').addEventListener('click', () => copyTextSafe(document.getElementById('c2e-expr-display').textContent));
+      document.getElementById('c2e-to-gen').addEventListener('click', () => {
+        const out = c2eModel.nodes.find(n => n.type === 'OUTPUT');
+        const r = out ? c2eModel.extractExpression(out.id) : null;
+        if (!r || r.empty || r.error) return showToast('Conecte um circuito válido à saída S.', 'warn');
+        document.getElementById('e2c-input').value = r.expr;
+        runE2C();
+        switchBMode('e2c');
+      });
+
+      c2eModel.onChange(updateC2EPanel);
+      c2eModel.loadData(astToCircuitData(parseBool('S = (A+B).(A.C)+(A⊕B)')), false);
+      c2eView.fitToView();
+      c2eView.render();
+    }
+
+    function updateC2EPanel() {
+      const disp = document.getElementById('c2e-expr-display');
+      const sub = document.getElementById('c2e-expr-sub');
+      const head = document.getElementById('c2e-tt-head');
+      const body = document.getElementById('c2e-tt-body');
+      const cnt = document.getElementById('c2e-tt-cnt');
+
+      const out = c2eModel.nodes.find(n => n.type === 'OUTPUT');
+      if (!out) {
+        disp.textContent = 'Adicione + OUT e conecte suas portas';
+        sub.textContent = '';
+        head.innerHTML = '';
+        body.innerHTML = '<tr><td style="padding:16px; color:var(--text-dim);">Sem saída S no quadro.</td></tr>';
+        cnt.textContent = '—';
+        return;
+      }
+      const r = c2eModel.extractExpression(out.id);
+      if (r.empty) {
+        disp.textContent = `${r.label} = (conecte uma porta à saída ${r.label})`;
+        sub.textContent = '';
+        head.innerHTML = '';
+        body.innerHTML = '<tr><td style="padding:16px; color:var(--text-dim);">Conecte um fio até S.</td></tr>';
+        cnt.textContent = '—';
+        return;
+      }
+      if (r.error) { disp.textContent = '⚠️ ' + r.error; sub.textContent = ''; return; }
+
+      disp.textContent = r.expr;
+      sub.textContent = r.floating ? 'Nota: pinos desconectados assumem valor 0.' : 'Circuito completo e válido.';
+
+      const vars = r.vars.slice(0, 4), rows = 1 << vars.length;
+      cnt.textContent = `${rows} linhas`;
+      head.innerHTML = `<tr>${vars.map(v => `<th>${v}</th>`).join('')}<th style="color:var(--cyan); border-left:1px solid var(--border);">${r.label}</th></tr>`;
+      const curr = {};
+      c2eModel.nodes.filter(n => n.type === 'INPUT').forEach(n => { curr[n.label] = n.value; });
+
+      let h = '';
+      for (let i = 0; i < rows; i++) {
+        const env = {}, bs = [];
+        vars.forEach((v, idx) => { const b = (i >> (vars.length - 1 - idx)) & 1; env[v] = b; bs.push(b); });
+        const o = evalAST(r.ast, env);
+        const act = vars.every((v, idx) => (curr[v] ? 1 : 0) === bs[idx]);
+        h += `<tr class="tt-row ${act ? 'active' : ''}" data-b="${bs.join(',')}">${bs.map(b => `<td style="color:${b ? C_HIGH : '#64748b'}">${b}</td>`).join('')}<td style="border-left:1px solid var(--border);"><span class="bit-badge ${o ? 'bit-1' : 'bit-0'}">${o}</span></td></tr>`;
+      }
+      body.innerHTML = h;
+      body.querySelectorAll('.tt-row').forEach(tr => tr.addEventListener('click', () => {
+        const bs = tr.dataset.b.split(',').map(Number);
+        vars.forEach((v, i) => c2eModel.nodes.filter(n => n.type === 'INPUT' && n.label === v).forEach(n => { n.value = bs[i]; }));
+        c2eModel.notify();
+      }));
+    }
+
+    /* =========================================================================
+       ABA 1.1: CATÁLOGO DAS 8 PORTAS
+       ========================================================================= */
+    const CAT = {
+      BUFFER: { n: 'BUFFER (Sim)', m: false, s: 'Repete e reforça o sinal', f: () => 'S = A', d: 'Mantém o valor lógico da entrada. Usado para amplificar corrente e isolar circuitos.' },
+      NOT:    { n: 'NOT (Inversora)', m: false, s: 'Inverte 0 ↔ 1', f: () => 'S = ¬A', d: 'Negação lógica: se entra 1 sai 0; se entra 0 sai 1.' },
+      AND:    { n: 'AND (E)', m: true, s: 'Liga só se TODAS forem 1', f: v => `S = ${v.join(' · ')}`, d: 'Conjunção lógica. Qualquer entrada em 0 zera a saída.' },
+      OR:     { n: 'OR (OU)', m: true, s: 'Liga se PELO MENOS UMA for 1', f: v => `S = ${v.join(' + ')}`, d: 'Disjunção lógica. Só retorna 0 quando todas as entradas são 0.' },
+      NAND:   { n: 'NAND (NÃO-E)', m: true, s: 'Inverso da AND • Universal', f: v => `S = ¬(${v.join(' · ')})`, d: 'Só retorna 0 quando todas são 1. Constrói qualquer outro circuito digital.' },
+      NOR:    { n: 'NOR (NÃO-OU)', m: true, s: 'Inverso da OR • Universal', f: v => `S = ¬(${v.join(' + ')})`, d: 'Só retorna 1 quando todas são 0. Base do computador da Apollo 11.' },
+      XOR:    { n: 'XOR (OU Exclusivo)', m: true, s: 'Liga com nº ÍMPAR de 1s', f: v => `S = ${v.join(' ⊕ ')}`, d: 'Com 2 entradas, liga se forem diferentes. Com 3-4, detecta paridade ímpar.' },
+      XNOR:   { n: 'XNOR (Coincidência)', m: true, s: 'Liga com nº PAR de 1s', f: v => `S = ¬(${v.join(' ⊕ ')})`, d: 'Com 2 entradas, liga quando são iguais. Base de comparadores.' },
+    };
+    const catSt = { g: 'AND', c: 2, ins: [0, 0, 0, 0] };
+
+    function initCatalog() {
+      const grid = document.getElementById('cat-grid');
+      grid.innerHTML = Object.keys(CAT).map(k => `<button class="cat-btn" data-g="${k}"><svg viewBox="0 0 80 60" style="width:42px;height:30px;">${gateSymbolSVG(k, false)}</svg><span class="mono" style="font-size:11px;font-weight:800;">${k}</span></button>`).join('');
+      grid.querySelectorAll('.cat-btn').forEach(b => b.addEventListener('click', () => {
+        catSt.g = b.dataset.g; catSt.c = CAT[catSt.g].m ? Math.max(2, catSt.c) : 1; renderCatalog();
+      }));
+      document.querySelectorAll('.cat-cnt').forEach(b => b.addEventListener('click', () => { catSt.c = Number(b.dataset.c); renderCatalog(); }));
+      renderCatalog();
+    }
+
+    function renderCatalog() {
+      const g = CAT[catSt.g], cnt = g.m ? catSt.c : 1, ins = catSt.ins.slice(0, cnt), out = evalGate(catSt.g, ins);
+      const vars = ['A', 'B', 'C', 'D'].slice(0, cnt);
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.g === catSt.g));
+      document.getElementById('cat-name').textContent = g.n;
+      document.getElementById('cat-sub').textContent = g.s;
+      document.getElementById('cat-formula').textContent = g.f(vars);
+      document.getElementById('cat-desc').textContent = g.d;
+
+      const sel = document.getElementById('cat-in-sel');
+      sel.style.opacity = g.m ? '1' : '0.35'; sel.style.pointerEvents = g.m ? 'auto' : 'none';
+      document.querySelectorAll('.cat-cnt').forEach(b => { b.className = `btn btn-sm cat-cnt ${g.m && Number(b.dataset.c) === cnt ? 'btn-primary' : ''}`; });
+
+      const svg = document.getElementById('cat-svg'), cy = 125;
+      const ys = cnt === 1 ? [cy] : Array.from({ length: cnt }, (_, i) => cy - cnt * 24 + i * ((cnt * 48) / (cnt - 1)));
+      let w = '', bs = '';
+      ins.forEach((v, i) => {
+        const py = ys[i], ty = cnt === 1 ? cy : 84 + i * (82 / (cnt - 1)), col = v ? C_HIGH : C_LOW;
+        w += `<path d="M 102 ${py} H 152 L 176 ${ty} H 208" fill="none" stroke="${col}" stroke-width="${v ? 4 : 3}" stroke-linecap="round" class="${v ? 'glow-high' : ''}"/>`;
+        bs += `<g class="cat-hit" data-i="${i}" style="cursor:pointer" transform="translate(20,${py - 21})"><rect width="82" height="42" rx="11" fill="${v ? 'rgba(34,197,94,0.22)' : '#131a29'}" stroke="${v ? C_HIGH : '#334155'}" stroke-width="2"/><text x="20" y="26" fill="#94a3b8" font-family="monospace" font-size="14" font-weight="800">${vars[i]}</text><text x="58" y="27" text-anchor="middle" fill="${v ? C_HIGH : '#e2e8f0'}" font-family="monospace" font-size="16" font-weight="800">${v}</text></g>`;
+      });
+      svg.innerHTML = `${w}<line x1="324" y1="${cy}" x2="430" y2="${cy}" stroke="${out ? C_HIGH : C_LOW}" stroke-width="${out ? 4.2 : 3}" class="${out ? 'glow-high' : ''}"/><g transform="translate(188,65) scale(2)">${gateSymbolSVG(catSt.g, out === 1)}</g>${bs}<g transform="translate(462,${cy})"><circle r="27" fill="${out ? C_HIGH : '#1e293b'}" stroke="${out ? '#bbf7d0' : '#475569'}" stroke-width="3" class="${out ? 'glow-high' : ''}"/><text y="6" text-anchor="middle" fill="${out ? '#04131c' : '#94a3b8'}" font-family="monospace" font-size="18" font-weight="800">${out}</text></g>`;
+      svg.querySelectorAll('.cat-hit').forEach(el => el.addEventListener('click', () => { catSt.ins[Number(el.dataset.i)] ^= 1; renderCatalog(); }));
+
+      const rows = 1 << cnt;
+      document.getElementById('cat-rows').textContent = `${rows} linhas`;
+      document.getElementById('cat-tt-head').innerHTML = `<tr>${vars.map(v => `<th>${v}</th>`).join('')}<th style="color:var(--cyan); border-left:1px solid var(--border);">S</th></tr>`;
+      let th = '';
+      for (let r = 0; r < rows; r++) {
+        const rb = Array.from({ length: cnt }, (_, k) => (r >> (cnt - 1 - k)) & 1);
+        const ro = evalGate(catSt.g, rb);
+        const act = rb.every((b, k) => b === ins[k]);
+        th += `<tr class="tt-row ${act ? 'active' : ''}" data-r="${rb.join(',')}">${rb.map(b => `<td style="color:${b ? C_HIGH : '#64748b'}">${b}</td>`).join('')}<td style="border-left:1px solid var(--border);"><span class="bit-badge ${ro ? 'bit-1' : 'bit-0'}">${ro}</span></td></tr>`;
+      }
+      const tb = document.getElementById('cat-tt-body');
+      tb.innerHTML = th;
+      tb.querySelectorAll('.tt-row').forEach(tr => tr.addEventListener('click', () => {
+        tr.dataset.r.split(',').map(Number).forEach((b, k) => { catSt.ins[k] = b; }); renderCatalog();
+      }));
+    }
+
+    /* =========================================================================
+       ABA 1.3: TODAS AS 16 VARIANTES (CARDS MOBILE-FRIENDLY)
+       ========================================================================= */
+    const V16 = [
+      { id: 0,  b: '0000', n: 'Falso (Constante 0)', f: 'S = A · ¬A', g: "S = A·A'", h: 'Conecte A e ¬A em uma AND (ou aterre no GND).' },
+      { id: 1,  b: '0001', n: 'AND (Conjunção)', f: 'S = A · B', g: 'S = A·B', h: 'Uma porta AND com entradas A e B.' },
+      { id: 2,  b: '0010', n: 'Inibição A (A·¬B)', f: 'S = A · ¬B', g: "S = A·B'", h: 'Passe B por NOT e combine com A em uma AND.' },
+      { id: 3,  b: '0011', n: 'Transferência A', f: 'S = A', g: 'S = A', h: 'Ligue A diretamente (ou via BUFFER) à saída.' },
+      { id: 4,  b: '0100', n: 'Inibição B (¬A·B)', f: 'S = ¬A · B', g: "S = A'·B", h: 'Passe A por NOT e combine com B em uma AND.' },
+      { id: 5,  b: '0101', n: 'Transferência B', f: 'S = B', g: 'S = B', h: 'Ligue B diretamente (ou via BUFFER) à saída.' },
+      { id: 6,  b: '0110', n: 'XOR (OU Exclusivo)', f: 'S = A ⊕ B', g: 'S = A⊕B', h: 'Uma porta XOR ou (A·¬B) + (¬A·B).' },
+      { id: 7,  b: '0111', n: 'OR (Disjunção)', f: 'S = A + B', g: 'S = A+B', h: 'Uma porta OR com entradas A e B.' },
+      { id: 8,  b: '1000', n: 'NOR (NÃO-OU)', f: 'S = ¬(A + B)', g: "S = (A+B)'", h: 'Uma porta NOR (ou OR seguida de NOT).' },
+      { id: 9,  b: '1001', n: 'XNOR (Equivalência)', f: 'S = A ⊙ B', g: 'S = A⊙B', h: 'Uma porta XNOR (ou XOR seguida de NOT).' },
+      { id: 10, b: '1010', n: 'Negação B (¬B)', f: 'S = ¬B', g: "S = B'", h: 'Uma porta NOT na entrada B.' },
+      { id: 11, b: '1011', n: 'Implicação B → A', f: 'S = A + ¬B', g: "S = A+B'", h: 'Inverta B com NOT e combine com A em uma OR.' },
+      { id: 12, b: '1100', n: 'Negação A (¬A)', f: 'S = ¬A', g: "S = A'", h: 'Uma porta NOT na entrada A.' },
+      { id: 13, b: '1101', n: 'Implicação A → B', f: 'S = ¬A + B', g: "S = A'+B", h: 'Inverta A com NOT e combine com B em uma OR.' },
+      { id: 14, b: '1110', n: 'NAND (NÃO-E)', f: 'S = ¬(A · B)', g: "S = (A·B)'", h: 'Uma porta NAND (ou AND seguida de NOT).' },
+      { id: 15, b: '1111', n: 'Verdadeiro (Const. 1)', f: 'S = A + ¬A', g: "S = A+A'", h: 'Conecte A e ¬A em uma OR (ou ligue no +5V).' },
+    ];
+
+    function initV16() {
+      const box = document.getElementById('v16-list');
+      box.innerHTML = V16.map(v => `
+        <div class="v16-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <span class="mono" style="font-size:11px; color:var(--text-dim);">F${String(v.id).padStart(2, '0')}</span>
+            <span class="mono" style="font-size:12px; font-weight:800; color:var(--high); letter-spacing:2px; background:rgba(34,197,94,0.12); padding:2px 8px; border-radius:6px;">${v.b}</span>
+          </div>
+          <div>
+            <div style="font-size:15px; font-weight:800; color:#fff;">${v.n}</div>
+            <div class="mono" style="font-size:13px; color:var(--cyan); margin-top:2px;">${v.f}</div>
+          </div>
+          <div style="font-size:12px; color:var(--text-muted); flex:1;">${v.h}</div>
+          <button class="btn btn-sm btn-cyan btn-block v16-test" data-g="${v.g}" data-n="${v.n}">⚡ Testar no Gerador</button>
+        </div>
+      `).join('');
+      box.querySelectorAll('.v16-test').forEach(b => b.addEventListener('click', () => {
+        document.getElementById('e2c-input').value = b.dataset.g;
+        runE2C();
+        switchM1('expr');
+        switchBMode('e2c');
+        showToast(`"${b.dataset.n}" carregada no Gerador!`, 'success');
+      }));
+    }
+
+    /* =========================================================================
+       ABA 2: INTERRUPTORES, CMOS & PORTAS UNIVERSAIS
+       ========================================================================= */
+    const swSt = { g: 'AND', a: 0, b: 0 };
+    function initSwitches() {
+      document.querySelectorAll('#sw-tabs .chip').forEach(b => b.addEventListener('click', () => { swSt.g = b.dataset.sw; renderSw(); }));
+      renderSw();
+    }
+    function renderSw() {
+      const { g, a, b } = swSt;
+      document.querySelectorAll('#sw-tabs .chip').forEach(x => x.classList.toggle('active', x.dataset.sw === g));
+      const lit = g === 'AND' ? (a && b) : g === 'OR' ? (a || b) : g === 'NOT' ? !a : (a ^ b);
+      const mk = (l, v, k) => `<button class="in-btn ${v ? 'on' : ''}" data-k="${k}" style="width:100%;"><span>Interruptor ${l}</span><span>${v ? '1 (FECHADO)' : '0 (ABERTO)'}</span></button>`;
+      const ctr = document.getElementById('sw-ctrls');
+      ctr.innerHTML = g === 'NOT' ? mk('A (NF)', a, 'a') : mk('A', a, 'a') + mk('B', b, 'b');
+      ctr.querySelectorAll('button').forEach(el => el.addEventListener('click', () => { swSt[el.dataset.k] ^= 1; renderSw(); }));
+      const ex = { AND: 'Em SÉRIE: corrente só passa se A e B estiverem fechados.', OR: 'Em PARALELO: basta A ou B fechar para acender.', NOT: 'Normalmente Fechado (NF): solto (0) acende; apertado (1) abre e apaga.', XOR: '3 Vias (escada): acende apenas quando A e B estão em posições diferentes.' };
+      document.getElementById('sw-expl').textContent = ex[g];
+
+      const off = '#334155', on = C_HIGH, fl = lit ? 'current-flow' : '';
+      const bat = `<g transform="translate(50,105)"><rect width="32" height="68" rx="6" fill="#131a29" stroke="#475569" stroke-width="2"/><line x1="6" y1="20" x2="26" y2="20" stroke="#f59e0b" stroke-width="3"/><line x1="11" y1="32" x2="21" y2="32" stroke="#94a3b8" stroke-width="2"/><text x="16" y="54" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="10">5V</text></g>`;
+      const bulb = `<g transform="translate(520,140)">${lit ? '<circle r="36" fill="rgba(250,204,21,0.25)"/>' : ''}<circle r="23" fill="${lit ? '#facc15' : '#1e293b'}" stroke="${lit ? '#fef08a' : '#475569'}" stroke-width="2.5" class="${lit ? 'glow-bulb' : ''}"/><text y="42" text-anchor="middle" fill="${lit ? '#fde047' : '#64748b'}" font-family="monospace" font-size="13" font-weight="800">S=${lit ? 1 : 0}</text></g>`;
+      let mid = '';
+      if (g === 'AND') {
+        const c = lit ? on : off;
+        mid = `<path d="M 66 173 V 230 H 520 V 163" fill="none" stroke="${c}" stroke-width="3.5" class="${fl}"/><path d="M 66 105 V 75 H 170" fill="none" stroke="${on}" stroke-width="3.5" class="${fl}"/><line x1="250" y1="75" x2="320" y2="75" stroke="${a ? on : off}" stroke-width="3.5" class="${fl}"/><path d="M 400 75 H 520 V 117" fill="none" stroke="${c}" stroke-width="3.5" class="${fl}"/><g class="sw-h" data-k="a" style="cursor:pointer"><rect x="160" y="38" width="100" height="60" fill="transparent"/><circle cx="170" cy="75" r="5" fill="#94a3b8"/><circle cx="250" cy="75" r="5" fill="#94a3b8"/><line x1="170" y1="75" x2="${a ? 250 : 238}" y2="${a ? 75 : 48}" stroke="${a ? C_HIGH : '#f43f5e'}" stroke-width="4" stroke-linecap="round"/><text x="210" y="106" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">A=${a}</text></g><g class="sw-h" data-k="b" style="cursor:pointer"><rect x="310" y="38" width="100" height="60" fill="transparent"/><circle cx="320" cy="75" r="5" fill="#94a3b8"/><circle cx="400" cy="75" r="5" fill="#94a3b8"/><line x1="320" y1="75" x2="${b ? 400 : 388}" y2="${b ? 75 : 48}" stroke="${b ? C_HIGH : '#f43f5e'}" stroke-width="4" stroke-linecap="round"/><text x="360" y="106" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">B=${b}</text></g>`;
+      } else if (g === 'OR') {
+        const cm = lit ? on : off;
+        mid = `<path d="M 66 173 V 235 H 520 V 163" fill="none" stroke="${cm}" stroke-width="3.5" class="${fl}"/><path d="M 66 105 V 115 H 180" fill="none" stroke="${on}" stroke-width="3.5" class="${fl}"/><path d="M 180 115 V 70 H 240 M 330 70 H 390 V 115" fill="none" stroke="${a ? on : off}" stroke-width="3.5" class="${a ? 'current-flow' : ''}"/><path d="M 180 115 V 160 H 240 M 330 160 H 390 V 115" fill="none" stroke="${b ? on : off}" stroke-width="3.5" class="${b ? 'current-flow' : ''}"/><path d="M 390 115 H 520 V 117" fill="none" stroke="${cm}" stroke-width="3.5" class="${fl}"/><g class="sw-h" data-k="a" style="cursor:pointer"><rect x="230" y="36" width="110" height="55" fill="transparent"/><circle cx="240" cy="70" r="5" fill="#94a3b8"/><circle cx="330" cy="70" r="5" fill="#94a3b8"/><line x1="240" y1="70" x2="${a ? 330 : 318}" y2="${a ? 70 : 44}" stroke="${a ? C_HIGH : '#f43f5e'}" stroke-width="4" stroke-linecap="round"/><text x="285" y="96" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">A=${a}</text></g><g class="sw-h" data-k="b" style="cursor:pointer"><rect x="230" y="126" width="110" height="55" fill="transparent"/><circle cx="240" cy="160" r="5" fill="#94a3b8"/><circle cx="330" cy="160" r="5" fill="#94a3b8"/><line x1="240" y1="160" x2="${b ? 330 : 318}" y2="${b ? 160 : 134}" stroke="${b ? C_HIGH : '#f43f5e'}" stroke-width="4" stroke-linecap="round"/><text x="285" y="188" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">B=${b}</text></g>`;
+      } else if (g === 'NOT') {
+        const c = lit ? on : off;
+        mid = `<path d="M 66 173 V 230 H 520 V 163" fill="none" stroke="${c}" stroke-width="3.5" class="${fl}"/><path d="M 66 105 V 85 H 240" fill="none" stroke="${on}" stroke-width="3.5" class="${fl}"/><path d="M 330 85 H 520 V 117" fill="none" stroke="${c}" stroke-width="3.5" class="${fl}"/><g class="sw-h" data-k="a" style="cursor:pointer"><rect x="225" y="38" width="120" height="75" fill="transparent"/><circle cx="240" cy="85" r="5" fill="#94a3b8"/><circle cx="330" cy="85" r="5" fill="#94a3b8"/><line x1="240" y1="${a ? 58 : 85}" x2="330" y2="${a ? 58 : 85}" stroke="${a ? '#f43f5e' : C_HIGH}" stroke-width="4.5" stroke-linecap="round"/><text x="285" y="116" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">NF: A=${a}</text></g>`;
+      } else {
+        const tl = (a === 0 && b === 1), bl = (a === 1 && b === 0), cm = lit ? on : off;
+        mid = `<path d="M 66 173 V 230 H 520 V 163" fill="none" stroke="${cm}" stroke-width="3.5" class="${fl}"/><path d="M 66 105 V 115 H 165" fill="none" stroke="${on}" stroke-width="3.5" class="${fl}"/><line x1="230" y1="75" x2="355" y2="75" stroke="${tl ? on : (a === 0 ? C_CYAN : off)}" stroke-width="3.5" class="${tl ? 'current-flow' : ''}"/><line x1="230" y1="155" x2="355" y2="155" stroke="${bl ? on : (a === 1 ? C_CYAN : off)}" stroke-width="3.5" class="${bl ? 'current-flow' : ''}"/><path d="M 420 115 H 520 V 117" fill="none" stroke="${cm}" stroke-width="3.5" class="${fl}"/><g class="sw-h" data-k="a" style="cursor:pointer"><rect x="155" y="60" width="85" height="110" fill="transparent"/><circle cx="165" cy="115" r="5" fill="#94a3b8"/><circle cx="230" cy="75" r="5" fill="#94a3b8"/><circle cx="230" cy="155" r="5" fill="#94a3b8"/><line x1="165" y1="115" x2="230" y2="${a === 0 ? 75 : 155}" stroke="${C_HIGH}" stroke-width="4" stroke-linecap="round"/><text x="195" y="190" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">A=${a}</text></g><g class="sw-h" data-k="b" style="cursor:pointer"><rect x="345" y="60" width="85" height="110" fill="transparent"/><circle cx="420" cy="115" r="5" fill="#94a3b8"/><circle cx="355" cy="75" r="5" fill="#94a3b8"/><circle cx="355" cy="155" r="5" fill="#94a3b8"/><line x1="420" y1="115" x2="355" y2="${b === 1 ? 75 : 155}" stroke="${C_HIGH}" stroke-width="4" stroke-linecap="round"/><text x="390" y="190" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">B=${b}</text></g>`;
+      }
+      const svg = document.getElementById('sw-svg');
+      svg.innerHTML = mid + bat + bulb;
+      svg.querySelectorAll('.sw-h').forEach(el => el.addEventListener('click', () => { swSt[el.dataset.k] ^= 1; renderSw(); }));
+    }
+
+    const cmSt = { g: 'NOT', a: 0, b: 0 };
+    function initCmos() {
+      document.querySelectorAll('#cmos-tabs .chip').forEach(b => b.addEventListener('click', () => { cmSt.g = b.dataset.cmos; renderCmos(); }));
+      renderCmos();
+    }
+    function renderCmos() {
+      const { g, a, b } = cmSt;
+      document.querySelectorAll('#cmos-tabs .chip').forEach(x => x.classList.toggle('active', x.dataset.cmos === g));
+      const out = g === 'NOT' ? (a ? 0 : 1) : g === 'NAND' ? ((a && b) ? 0 : 1) : ((a || b) ? 0 : 1);
+      const mk = (l, v, k) => `<button class="in-btn ${v ? 'on' : ''}" data-k="${k}" style="width:100%;"><span>Entrada ${l}</span><span>${v} (${v ? '+5V' : '0V'})</span></button>`;
+      const ctr = document.getElementById('cmos-ctrls');
+      ctr.innerHTML = g === 'NOT' ? mk('A', a, 'a') : mk('A', a, 'a') + mk('B', b, 'b');
+      ctr.querySelectorAll('button').forEach(el => el.addEventListener('click', () => { cmSt[el.dataset.k] ^= 1; renderCmos(); }));
+
+      const mos = (x, y, t, l, on) => {
+        const isP = t === 'PMOS', col = on ? (isP ? '#fbbf24' : C_CYAN) : '#475569';
+        return `<g transform="translate(${x},${y})"><rect x="-44" y="-20" width="88" height="40" rx="9" fill="${on ? (isP ? 'rgba(251,191,36,0.16)' : 'rgba(56,189,248,0.16)') : '#131a29'}" stroke="${col}" stroke-width="${on ? 2.4 : 1.6}"/><text y="-3" text-anchor="middle" fill="#fff" font-family="monospace" font-size="11" font-weight="800">${t} (${l})</text><text y="12" text-anchor="middle" fill="${on ? col : '#64748b'}" font-family="monospace" font-size="10" font-weight="800">${on ? 'CONDUZ' : 'CORTADO'}</text></g>`;
+      };
+      let d = `<line x1="110" y1="28" x2="400" y2="28" stroke="#f59e0b" stroke-width="3"/><text x="255" y="18" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="12" font-weight="800">VDD (+5V)</text><line x1="110" y1="342" x2="400" y2="342" stroke="#64748b" stroke-width="3"/><text x="255" y="362" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="12" font-weight="800">GND (0V)</text><line x1="255" y1="185" x2="475" y2="185" stroke="${out ? C_HIGH : '#475569'}" stroke-width="3.5" class="${out ? 'glow-high' : ''}"/><circle cx="505" cy="185" r="23" fill="${out ? C_HIGH : '#1e293b'}" stroke="${out ? '#bbf7d0' : '#475569'}" stroke-width="2.5"/><text x="505" y="191" text-anchor="middle" fill="${out ? '#04131c' : '#94a3b8'}" font-family="monospace" font-size="16" font-weight="800">${out}</text>`;
+      const st = document.getElementById('cmos-status');
+      if (g === 'NOT') {
+        const p = a === 0, n = a === 1;
+        d += `<line x1="255" y1="28" x2="255" y2="185" stroke="${p ? '#fbbf24' : '#334155'}" stroke-width="3" class="${p ? 'current-flow' : ''}"/><line x1="255" y1="185" x2="255" y2="342" stroke="${n ? C_CYAN : '#334155'}" stroke-width="3" class="${n ? 'current-flow' : ''}"/>${mos(255, 105, 'PMOS', 'A=' + a, p)}${mos(255, 265, 'NMOS', 'A=' + a, n)}`;
+        st.innerHTML = `<div style="color:${p ? '#fbbf24' : '#64748b'}">• PMOS: ${p ? 'ON → +5V' : 'OFF'}</div><div style="color:${n ? C_CYAN : '#64748b'}">• NMOS: ${n ? 'ON → 0V' : 'OFF'}</div>`;
+        document.getElementById('cmos-expl').textContent = 'PMOS conduz em 0 e NMOS em 1: nunca há curto entre VDD e GND.';
+      } else if (g === 'NAND') {
+        const pA = a === 0, pB = b === 0, nA = a === 1, nB = b === 1, pd = nA && nB;
+        d += `<path d="M 180 28 V 185 H 255" fill="none" stroke="${pA ? '#fbbf24' : '#334155'}" stroke-width="3" class="${pA ? 'current-flow' : ''}"/><path d="M 330 28 V 185 H 255" fill="none" stroke="${pB ? '#fbbf24' : '#334155'}" stroke-width="3" class="${pB ? 'current-flow' : ''}"/><line x1="255" y1="185" x2="255" y2="342" stroke="${pd ? C_CYAN : '#334155'}" stroke-width="3" class="${pd ? 'current-flow' : ''}"/>${mos(180, 105, 'PMOS', 'A=' + a, pA)}${mos(330, 105, 'PMOS', 'B=' + b, pB)}${mos(255, 232, 'NMOS', 'A=' + a, nA)}${mos(255, 296, 'NMOS', 'B=' + b, nB)}`;
+        st.innerHTML = `<div>• PMOS Paralelo: A=${pA ? 'ON' : 'OFF'}, B=${pB ? 'ON' : 'OFF'}</div><div>• NMOS Série: A=${nA ? 'ON' : 'OFF'}, B=${nB ? 'ON' : 'OFF'}</div>`;
+        document.getElementById('cmos-expl').textContent = 'NMOS em série só aterram (0) quando A=1 e B=1 ao mesmo tempo.';
+      } else {
+        const pA = a === 0, pB = b === 0, nA = a === 1, nB = b === 1, pu = pA && pB;
+        d += `<line x1="255" y1="28" x2="255" y2="185" stroke="${pu ? '#fbbf24' : '#334155'}" stroke-width="3" class="${pu ? 'current-flow' : ''}"/><path d="M 180 185 V 342" fill="none" stroke="${nA ? C_CYAN : '#334155'}" stroke-width="3" class="${nA ? 'current-flow' : ''}"/><path d="M 330 185 V 342" fill="none" stroke="${nB ? C_CYAN : '#334155'}" stroke-width="3" class="${nB ? 'current-flow' : ''}"/><line x1="180" y1="185" x2="330" y2="185" stroke="${(nA || nB) ? C_CYAN : '#334155'}" stroke-width="3"/>${mos(255, 74, 'PMOS', 'A=' + a, pA)}${mos(255, 138, 'PMOS', 'B=' + b, pB)}${mos(180, 265, 'NMOS', 'A=' + a, nA)}${mos(330, 265, 'NMOS', 'B=' + b, nB)}`;
+        st.innerHTML = `<div>• PMOS Série: A=${pA ? 'ON' : 'OFF'}, B=${pB ? 'ON' : 'OFF'}</div><div>• NMOS Paralelo: A=${nA ? 'ON' : 'OFF'}, B=${nB ? 'ON' : 'OFF'}</div>`;
+        document.getElementById('cmos-expl').textContent = 'PMOS em série só puxam para +5V (1) quando A=0 e B=0 juntos.';
+      }
+      document.getElementById('cmos-svg').innerHTML = d;
+    }
+
+    const uSt = { base: 'NAND', t: 'OR', a: 0, b: 0 };
+    function initUniv() {
+      document.querySelectorAll('.univ-base').forEach(b => b.addEventListener('click', () => {
+        uSt.base = b.dataset.base; uSt.t = uSt.base === 'NAND' ? 'OR' : 'AND'; renderUniv();
+      }));
+      renderUniv();
+    }
+    function renderUniv() {
+      const { base, a, b } = uSt;
+      document.querySelectorAll('.univ-base').forEach(btn => btn.className = `btn btn-sm univ-base ${btn.dataset.base === base ? 'btn-green' : ''}`);
+      const tgts = base === 'NAND' ? ['NOT', 'AND', 'OR', 'XOR'] : ['NOT', 'OR', 'AND', 'XNOR'];
+      if (!tgts.includes(uSt.t)) uSt.t = tgts[0];
+      const tgt = uSt.t;
+
+      const tb = document.getElementById('univ-targets');
+      tb.innerHTML = tgts.map(x => `<button class="chip ${x === tgt ? 'active' : ''}" data-t="${x}">Montar ${x}</button>`).join('');
+      tb.querySelectorAll('button').forEach(el => el.addEventListener('click', () => { uSt.t = el.dataset.t; renderUniv(); }));
+
+      const mk = (l, v, k) => `<button class="in-btn ${v ? 'on' : ''}" data-k="${k}" style="width:100%;"><span>Entrada ${l}</span><span>${v}</span></button>`;
+      const ctr = document.getElementById('univ-ctrls');
+      ctr.innerHTML = tgt === 'NOT' ? mk('A', a, 'a') : mk('A', a, 'a') + mk('B', b, 'b');
+      ctr.querySelectorAll('button').forEach(el => el.addEventListener('click', () => { uSt[el.dataset.k] ^= 1; renderUniv(); }));
+
+      const u = (x, y) => evalGate(base, [x, y]);
+      const wr = (d, v) => `<path d="${d}" fill="none" stroke="${v ? C_HIGH : C_LOW}" stroke-width="${v ? 3.2 : 2.2}" class="${v ? 'glow-high' : ''}"/>`;
+      const gs = (x, y, v, lb) => `<g transform="translate(${x},${y}) scale(0.9)">${gateSymbolSVG(base, v === 1)}</g><text x="${x + 28}" y="${y + 30}" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="9" font-weight="800">${lb}</text>`;
+      const inn = (l, v, y) => `<circle cx="38" cy="${y}" r="16" fill="${v ? 'rgba(34,197,94,0.2)' : '#131a29'}" stroke="${v ? C_HIGH : '#475569'}" stroke-width="2"/><text x="38" y="${y + 4}" text-anchor="middle" fill="${v ? C_HIGH : '#cbd5e1'}" font-family="monospace" font-size="11" font-weight="800">${l}=${v}</text>`;
+      const outn = (v, y) => `<circle cx="574" cy="${y}" r="20" fill="${v ? C_HIGH : '#1e293b'}" stroke="${v ? '#bbf7d0' : '#475569'}" stroke-width="2.5"/><text x="574" y="${y + 5}" text-anchor="middle" fill="${v ? '#04131c' : '#94a3b8'}" font-family="monospace" font-size="14" font-weight="800">${v}</text>`;
+
+      let h = '', alg = '', ex = '';
+      if (tgt === 'NOT') {
+        const q = u(a, a); alg = `¬A = A ${base} A`; ex = `1 porta ${base} com as duas entradas unidas inverte A.`;
+        h = wr('M 54 145 H 200 V 130 H 245 M 200 145 V 160 H 245', a) + wr('M 308 145 H 554', q) + gs(240, 118, q, '1') + inn('A', a, 145) + outn(q, 145);
+      } else if ((base === 'NAND' && tgt === 'AND') || (base === 'NOR' && tgt === 'OR')) {
+        const s1 = u(a, b), q = u(s1, s1); alg = `${tgt} = 2 portas ${base}`; ex = `A 1ª porta faz ${base} e a 2ª inverte o resultado.`;
+        h = wr('M 54 105 H 140 V 130 H 175', a) + wr('M 54 185 H 140 V 160 H 175', b) + wr('M 238 145 H 330 V 130 H 360 M 330 145 V 160 H 360', s1) + wr('M 422 145 H 554', q) + gs(170, 118, s1, '1') + gs(355, 118, q, '2') + inn('A', a, 105) + inn('B', b, 185) + outn(q, 145);
+      } else if ((base === 'NAND' && tgt === 'OR') || (base === 'NOR' && tgt === 'AND')) {
+        const na = u(a, a), nb = u(b, b), q = u(na, nb); alg = `Lei de De Morgan • 3 portas ${base}`; ex = `Invertemos A e B e combinamos na 3ª porta ${base}.`;
+        h = wr('M 54 85 H 120 V 70 H 150 M 120 85 V 100 H 150', a) + wr('M 54 205 H 120 V 190 H 150 M 120 205 V 220 H 150', b) + wr('M 212 85 H 310 V 130 H 355', na) + wr('M 212 205 H 310 V 160 H 355', nb) + wr('M 418 145 H 554', q) + gs(145, 58, na, '¬A') + gs(145, 178, nb, '¬B') + gs(350, 118, q, '3') + inn('A', a, 85) + inn('B', b, 205) + outn(q, 145);
+      } else {
+        const s1 = u(a, b), s2 = u(a, s1), s3 = u(b, s1), q = u(s2, s3); alg = `Topologia Diamante • 4 portas ${base}`; ex = `Apenas 4 portas ${base} montam a função ${tgt} completa.`;
+        h = wr('M 54 70 H 255', a) + wr('M 105 70 V 130 H 140', a) + wr('M 54 220 H 255', b) + wr('M 105 220 V 160 H 140', b) + wr('M 202 145 H 228 V 100 H 255 M 228 145 V 190 H 255', s1) + wr('M 317 85 H 375 V 130 H 410', s2) + wr('M 317 205 H 375 V 160 H 410', s3) + wr('M 472 145 H 554', q) + gs(135, 118, s1, '1') + gs(250, 58, s2, '2') + gs(250, 178, s3, '3') + gs(405, 118, q, '4') + inn('A', a, 70) + inn('B', b, 220) + outn(q, 145);
+      }
+      document.getElementById('univ-alg').textContent = alg;
+      document.getElementById('univ-expl').textContent = ex;
+      document.getElementById('univ-svg').innerHTML = h;
+    }
+
+    /* =========================================================================
+       ABA 3: SANDBOX LIVRE
+       ========================================================================= */
+    function initSandbox() {
+      sbView = new CircuitViewport({
+        stageEl: document.getElementById('sb-inline-stage'),
+        svgEl: document.getElementById('sb-inline-svg'),
+        model: sbModel,
+      });
+
+      buildSymbolDock(document.getElementById('sb-inline-dock'), (t) => sbView.addNodeAtCenter(t));
+
+      document.getElementById('sb-open-fs').addEventListener('click', () => openFullscreenStudio(sbModel, false));
+      document.getElementById('sb-fit-inline').addEventListener('click', () => { sbView.fitToView(); sbView.render(); });
+      document.getElementById('sb-inline-org').addEventListener('click', () => { sbModel.autoLayout(); sbView.fitToView(); sbView.render(); });
+      document.getElementById('sb-inline-undo').addEventListener('click', () => sbModel.undo());
+      document.getElementById('sb-inline-clear').addEventListener('click', () => sbModel.clear());
+
+      document.querySelectorAll('#sb-presets .chip').forEach(ch => ch.addEventListener('click', () => {
+        document.querySelectorAll('#sb-presets .chip').forEach(x => x.classList.remove('active'));
+        ch.classList.add('active');
+        loadSbPreset(ch.dataset.p);
+      }));
+
+      sbModel.onChange(() => {
+        const box = document.getElementById('sb-exprs-inline');
+        const outs = sbModel.nodes.filter(n => n.type === 'OUTPUT');
+        box.innerHTML = outs.map(o => {
+          const r = sbModel.extractExpression(o.id);
+          const txt = r.empty ? `${o.label} = ?` : r.error ? `⚠️ ${r.error}` : r.expr;
+          return `<span class="mono" style="font-size:11px; font-weight:700; padding:5px 9px; border-radius:8px; background:#0d1320; border:1px solid var(--border-strong); color:${o.value ? C_HIGH : '#cbd5e1'};">${txt}</span>`;
+        }).join('');
+      });
+
+      loadSbPreset('halfAdder', true);
+    }
+
+    function loadSbPreset(name, silent = false) {
+      if (name === 'halfAdder') {
+        sbModel.loadData({
+          nodes: [
+            { id: 'n1', type: 'INPUT', label: 'A', x: 30, y: 70, value: 0 },
+            { id: 'n2', type: 'INPUT', label: 'B', x: 30, y: 190, value: 0 },
+            { id: 'n3', type: 'XOR', label: 'XOR', x: 180, y: 63, value: 0 },
+            { id: 'n4', type: 'AND', label: 'AND', x: 180, y: 183, value: 0 },
+            { id: 'n5', type: 'OUTPUT', label: 'SOMA', x: 335, y: 70, value: 0 },
+            { id: 'n6', type: 'OUTPUT', label: 'CARRY', x: 335, y: 190, value: 0 },
+          ],
+          wires: [
+            { from: 'n1', to: 'n3', toPin: 0 }, { from: 'n2', to: 'n3', toPin: 1 },
+            { from: 'n1', to: 'n4', toPin: 0 }, { from: 'n2', to: 'n4', toPin: 1 },
+            { from: 'n3', to: 'n5', toPin: 0 }, { from: 'n4', to: 'n6', toPin: 0 },
+          ],
+          nextId: 10,
+        }, !silent);
+      } else if (name === 'xorNand') {
+        sbModel.loadData({
+          nodes: [
+            { id: 'n1', type: 'INPUT', label: 'A', x: 24, y: 60, value: 0 },
+            { id: 'n2', type: 'INPUT', label: 'B', x: 24, y: 220, value: 0 },
+            { id: 'n3', type: 'NAND', label: 'NAND', x: 150, y: 140, value: 0 },
+            { id: 'n4', type: 'NAND', label: 'NAND', x: 290, y: 55, value: 0 },
+            { id: 'n5', type: 'NAND', label: 'NAND', x: 290, y: 215, value: 0 },
+            { id: 'n6', type: 'NAND', label: 'NAND', x: 430, y: 140, value: 0 },
+            { id: 'n7', type: 'OUTPUT', label: 'XOR', x: 570, y: 147, value: 0 },
+          ],
+          wires: [
+            { from: 'n1', to: 'n3', toPin: 0 }, { from: 'n2', to: 'n3', toPin: 1 },
+            { from: 'n1', to: 'n4', toPin: 0 }, { from: 'n3', to: 'n4', toPin: 1 },
+            { from: 'n3', to: 'n5', toPin: 0 }, { from: 'n2', to: 'n5', toPin: 1 },
+            { from: 'n4', to: 'n6', toPin: 0 }, { from: 'n5', to: 'n6', toPin: 1 },
+            { from: 'n6', to: 'n7', toPin: 0 },
+          ],
+          nextId: 12,
+        }, !silent);
+      } else if (name === 'parity3') {
+        sbModel.loadData(astToCircuitData(parseBool('PAR = A⊕B⊕C')), !silent);
+      } else {
+        sbModel.loadData(astToCircuitData(parseBool("IMP = A'+B")), !silent);
+      }
+      sbView.fitToView(); sbView.render();
+      if (!silent) showToast('Circuito carregado!', 'success');
+    }
+
+    /* =========================================================================
+       ABA 4: DESAFIOS PRÁTICOS (5 DESAFIOS + DICA)
+       ========================================================================= */
+    const qSt = {
+      curr: 0, solved: [false, false, false, false, false], fb: [null, null, null, null, null], hint: [false, false, false, false, false],
+      q0: [0, 0, 0, 0], q1AB: [0, 0], q1C: '', q2C: '', q3C: '', q4ABC: [0, 0, 0],
+    };
+    const Q_TITLES = ['1. NAND', '2. Caixa Preta', '3. Só NANDs', '4. Expressão', '5. Acenda LED'];
+    const Q_HINTS = [
+      'A porta NAND é o oposto exato da AND: só dá 0 quando A=1 e B=1.',
+      'Teste 00, 01, 10 e 11. Observe se ela liga quando A e B são iguais ou diferentes.',
+      'Use a Lei de De Morgan: ¬(¬A · ¬B) = A + B. Você precisa inverter A, inverter B e juntar.',
+      'Substitua A=1, B=1, C=0: (1+1)=1, (1·0)=0, então 1·0=0; e (1⊕1)=0.',
+      'Para a AND dar 1, C precisa ser 1 e (A NOR B) precisa ser 1 (ou seja, A=0 e B=0).'
+    ];
+
+    function renderQuiz() {
+      const done = qSt.solved.filter(Boolean).length;
+      document.getElementById('q-score').textContent = `${done} / 5`;
+      document.getElementById('q-prog').style.width = `${(done / 5) * 100}%`;
+
+      const pills = document.getElementById('q-pills');
+      pills.innerHTML = Q_TITLES.map((t, i) => `<button class="chip ${i === qSt.curr ? 'active' : ''}" data-i="${i}" style="${qSt.solved[i] ? 'border-color:var(--high);color:var(--high);' : ''}">${qSt.solved[i] ? '✓ ' : ''}${t}</button>`).join('');
+      pills.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { qSt.curr = Number(b.dataset.i); renderQuiz(); }));
+
+      const i = qSt.curr, card = document.getElementById('q-card');
+      let body = '';
+      if (i === 0) {
+        const ab = [[0,0],[0,1],[1,0],[1,1]];
+        body = `<div class="label-xs" style="color:var(--cyan);">Desafio 1</div><h3 class="section-title" style="margin-bottom:8px;">Complete a Tabela-Verdade da NAND</h3>
+          <div class="tt-box" style="margin-bottom:14px;"><table class="tt"><thead><tr><th>A</th><th>B</th><th style="color:var(--cyan);">S (NAND)</th></tr></thead><tbody>
+          ${ab.map((r, k) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td><button class="btn btn-sm q0-b ${qSt.q0[k] ? 'btn-green' : ''}" data-k="${k}" style="min-width:54px;">${qSt.q0[k]}</button></td></tr>`).join('')}
+          </tbody></table></div>`;
+      } else if (i === 1) {
+        const [a, b] = qSt.q1AB, o = evalGate('XNOR', [a, b]);
+        body = `<div class="label-xs" style="color:var(--cyan);">Desafio 2</div><h3 class="section-title" style="margin-bottom:8px;">Qual porta está na Caixa Preta?</h3>
+          <div class="eng-grid" style="padding:14px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px; margin-bottom:14px;">
+            <div style="display:flex; gap:8px;">
+              <button class="in-btn ${a ? 'on' : ''} q1-in" data-k="0"><span>A</span><span>${a}</span></button>
+              <button class="in-btn ${b ? 'on' : ''} q1-in" data-k="1"><span>B</span><span>${b}</span></button>
+            </div>
+            <div style="padding:10px 18px; border-radius:12px; border:2px dashed var(--cyan); font-weight:800; color:var(--cyan);">?</div>
+            <div class="mono" style="width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; background:${o ? C_HIGH : '#1e293b'}; color:${o ? '#04131c' : '#94a3b8'};">${o}</div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+            ${['AND', 'XOR', 'XNOR', 'NOR'].map(op => `<button class="btn q1-op ${qSt.q1C === op ? 'btn-cyan' : ''}" data-op="${op}">${op}</button>`).join('')}
+          </div>`;
+      } else if (i === 2) {
+        body = `<div class="label-xs" style="color:var(--cyan);">Desafio 3</div><h3 class="section-title" style="margin-bottom:8px;">Quantas NANDs para montar uma OR?</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Qual é o número mínimo de portas NAND de 2 entradas para construir uma porta OR?</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+            ${['1 NAND', '2 NANDs', '3 NANDs', '4 NANDs'].map(op => `<button class="btn q2-op ${qSt.q2C === op ? 'btn-cyan' : ''}" data-op="${op}">${op}</button>`).join('')}
+          </div>`;
+      } else if (i === 3) {
+        body = `<div class="label-xs" style="color:var(--cyan);">Desafio 4</div><h3 class="section-title" style="margin-bottom:8px;">S = (A+B)·(A·C)+(A⊕B)</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Com <span class="mono" style="color:var(--high);">A=1, B=1, C=0</span>, qual é o valor de S?</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+            <button class="btn q3-op ${qSt.q3C === '0' ? 'btn-cyan' : ''}" data-op="0">S = 0</button>
+            <button class="btn q3-op ${qSt.q3C === '1' ? 'btn-cyan' : ''}" data-op="1">S = 1</button>
+          </div>`;
+      } else {
+        const [a, b, c] = qSt.q4ABC, fin = evalGate('AND', [evalGate('NOR', [a, b]), c]);
+        body = `<div class="label-xs" style="color:var(--cyan);">Desafio 5</div><h3 class="section-title" style="margin-bottom:8px;">Acenda o LED: S = (A NOR B) · C</h3>
+          <div class="in-row" style="justify-content:center; margin:14px 0;">
+            ${[['A', a, 0], ['B', b, 1], ['C', c, 2]].map(([l, v, k]) => `<button class="in-btn ${v ? 'on' : ''} q4-in" data-k="${k}"><span>${l}</span><span>${v}</span></button>`).join('')}
+            <div class="mono" style="padding:10px 14px; border-radius:12px; font-weight:800; background:${fin ? 'rgba(34,197,94,0.2)' : '#1e293b'}; color:${fin ? C_HIGH : '#94a3b8'}; border:1px solid ${fin ? C_HIGH : '#475569'};">LED = ${fin}</div>
+          </div>`;
+      }
+
+      const fb = qSt.fb[i];
+      card.innerHTML = body +
+        `<div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="q-check" class="btn btn-primary" style="flex:1;">Verificar</button>
+          <button id="q-hint" class="btn">💡 Dica</button>
+        </div>` +
+        (qSt.hint[i] ? `<div class="card-inset" style="margin-top:10px; font-size:12px; color:#fcd34d; border-color:rgba(245,158,11,0.4);">💡 ${Q_HINTS[i]}</div>` : '') +
+        (fb ? `<div style="margin-top:10px; padding:12px; border-radius:12px; border:1px solid ${fb.ok ? 'rgba(34,197,94,0.5)' : 'rgba(244,63,94,0.5)'}; background:${fb.ok ? 'rgba(34,197,94,0.12)' : 'rgba(244,63,94,0.12)'};"><strong style="color:${fb.ok ? C_HIGH : '#fda4af'};">${fb.ok ? '✓ Correto!' : '✕ Tente novamente'}</strong><div style="font-size:13px; margin-top:4px;">${fb.msg}</div>${fb.ok && i < 4 ? `<button id="q-next" class="btn btn-sm btn-green" style="margin-top:8px;">Próximo →</button>` : ''}</div>` : '');
+
+      card.querySelectorAll('.q0-b').forEach(b => b.addEventListener('click', () => { qSt.q0[Number(b.dataset.k)] ^= 1; renderQuiz(); }));
+      card.querySelectorAll('.q1-in').forEach(b => b.addEventListener('click', () => { qSt.q1AB[Number(b.dataset.k)] ^= 1; renderQuiz(); }));
+      card.querySelectorAll('.q1-op').forEach(b => b.addEventListener('click', () => { qSt.q1C = b.dataset.op; renderQuiz(); }));
+      card.querySelectorAll('.q2-op').forEach(b => b.addEventListener('click', () => { qSt.q2C = b.dataset.op; renderQuiz(); }));
+      card.querySelectorAll('.q3-op').forEach(b => b.addEventListener('click', () => { qSt.q3C = b.dataset.op; renderQuiz(); }));
+      card.querySelectorAll('.q4-in').forEach(b => b.addEventListener('click', () => { qSt.q4ABC[Number(b.dataset.k)] ^= 1; renderQuiz(); }));
+
+      document.getElementById('q-hint').addEventListener('click', () => { qSt.hint[i] = !qSt.hint[i]; renderQuiz(); });
+      document.getElementById('q-check').addEventListener('click', () => {
+        if (i === 0) {
+          const ok = qSt.q0.join('') === '1110'; qSt.solved[0] ||= ok;
+          qSt.fb[0] = { ok, msg: ok ? 'Perfeito! NAND retorna 1, 1, 1, 0.' : 'Revise a última linha (1,1) da NAND.' };
+        } else if (i === 1) {
+          if (!qSt.q1C) return showToast('Escolha uma opção.', 'warn');
+          const ok = qSt.q1C === 'XNOR'; qSt.solved[1] ||= ok;
+          qSt.fb[1] = { ok, msg: ok ? 'Exato! Liga em 00 e 11 — porta XNOR.' : 'Observe que ela liga quando A e B são iguais!' };
+        } else if (i === 2) {
+          if (!qSt.q2C) return showToast('Escolha uma opção.', 'warn');
+          const ok = qSt.q2C === '3 NANDs'; qSt.solved[2] ||= ok;
+          qSt.fb[2] = { ok, msg: ok ? 'Isso! 2 NANDs invertem A e B e a 3ª aplica De Morgan.' : 'Veja na aba Montar → Só NAND / NOR.' };
+        } else if (i === 3) {
+          if (!qSt.q3C) return showToast('Escolha 0 ou 1.', 'warn');
+          const ok = qSt.q3C === '0'; qSt.solved[3] ||= ok;
+          qSt.fb[3] = { ok, msg: ok ? 'Correto! (1·0) + 0 = 0!' : 'Calcule (1+1)·(1·0) + (1⊕1) passo a passo.' };
+        } else {
+          const [a, b, c] = qSt.q4ABC, ok = evalGate('AND', [evalGate('NOR', [a, b]), c]) === 1;
+          qSt.solved[4] ||= ok;
+          qSt.fb[4] = { ok, msg: ok ? 'Show! A=0, B=0 e C=1 acende o LED!' : 'Ajuste A, B e C até o LED ficar em 1.' };
+        }
+        renderQuiz();
+      });
+      document.getElementById('q-next')?.addEventListener('click', () => { qSt.curr++; renderQuiz(); });
+    }
+
+    /* =========================================================================
+       BOOT
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+      initFullscreenStudio();
+      initE2C();
+      initC2E();
+      initCatalog();
+      initV16();
+      initSwitches();
+      initCmos();
+      initUniv();
+      initSandbox();
+      renderQuiz();
+    });
+  </script>
+</body>
+</html>
